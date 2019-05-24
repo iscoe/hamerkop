@@ -1,0 +1,2 @@
+# hamerkop
+Entity linking framework
