@@ -1,4 +1,5 @@
 import unittest
+from hamerkop.core import EntityType, EntityMention
 from hamerkop.utilities import *
 
 
@@ -22,3 +23,14 @@ class CaseInsensitiveSetTest(unittest.TestCase):
         a = CaseInsensitiveSet(['test'])
         a.discard('Test')
         self.assertEqual(0, len(a))
+
+
+class IdentifierTest(unittest.TestCase):
+
+    def test_simple(self):
+        mention = EntityMention("Ted", "IL9_SM_001", (4, 8), EntityType.PER)
+        ia = InProcessIncremental()
+        ia.assign(mention)
+        self.assertEqual('M1', mention.id)
+        ia.assign(mention)
+        self.assertEqual('M2', mention.id)
