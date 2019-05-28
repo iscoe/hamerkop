@@ -10,7 +10,6 @@ def get_filename(filename):
 
 
 class CoNLLReaderTest(unittest.TestCase):
-
     def test_simple(self):
         filename = get_filename('data/conll/conll_reader_test_no_header')
         data = [x for x in conll_reader(filename)]
@@ -35,7 +34,6 @@ class CoNLLReaderTest(unittest.TestCase):
 
 
 class DocumentPreparerTest(unittest.TestCase):
-
     def test_with_consecutive_b_tags(self):
         preparer = DocumentPreparer(InProcessIncremental())
         rows = [
@@ -46,8 +44,16 @@ class DocumentPreparerTest(unittest.TestCase):
         ]
         doc = preparer.process(rows)
         self.assertEqual(2, len(doc.mentions))
+        self.assertEqual(4, len(doc.tokens))
         self.assertEqual((0, 6), doc.mentions[0].offsets)
+        self.assertEqual((0, 1), doc.mentions[0].token_offsets)
+        self.assertEqual('George',
+                         ' '.join(doc.tokens[doc.mentions[0].token_offsets[0]:doc.mentions[0].token_offsets[1]]))
+        self.assertEqual('Tony',
+                         ' '.join(doc.tokens[doc.mentions[1].token_offsets[0]:doc.mentions[1].token_offsets[1]]))
         self.assertEqual('doc1', doc.mentions[1].docid)
+        self.assertEqual('doc1', doc.docid)
+        self.assertEqual((1, 2), doc.mentions[1].token_offsets)
         self.assertEqual(EntityType.PER, doc.mentions[1].type)
 
     def test_with_ending_i_tag(self):
@@ -61,7 +67,12 @@ class DocumentPreparerTest(unittest.TestCase):
         ]
         doc = preparer.process(rows)
         self.assertEqual(1, len(doc.mentions))
+        self.assertEqual(5, len(doc.tokens))
+        self.assertEqual('doc1', doc.docid)
         self.assertEqual('Thomas Jefferson', doc.mentions[0].string)
+        self.assertEqual((3, 5), doc.mentions[0].token_offsets)
+        self.assertEqual('Thomas Jefferson',
+                         ' '.join(doc.tokens[doc.mentions[0].token_offsets[0]:doc.mentions[0].token_offsets[1]]))
 
     def test_with_no_tags(self):
         preparer = DocumentPreparer(InProcessIncremental())
