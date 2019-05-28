@@ -80,7 +80,8 @@ class EntityMention(object):
     :string id: Unique mention id
     :string string: Mention string (maybe be normalized)
     :string docid: Document id
-    :tuple offsets: Offsets into the original document
+    :tuple offsets: Character offsets into the original document
+    :tuple token_offsets: Token offsets into the original document
     :string type: Entity type. See EntityType.
     :string original_string: Original mention string from the document
     """
