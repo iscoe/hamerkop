@@ -86,7 +86,7 @@ class EntityMention(object):
     :string original_string: Original mention string from the document
     """
 
-    def __init__(self, string, docid, offsets, type, id=None):
+    def __init__(self, string, docid, offsets, token_offsets, type, id=None):
         # id is often assigned after creation
         self.id = id
         self.string = string
@@ -94,20 +94,22 @@ class EntityMention(object):
         self.translation = False
         self.docid = docid
         self.offsets = offsets
+        self.token_offsets = token_offsets
         self.type = type
 
     def __repr__(self):
         return "EntityMention({}, {}, {})".format(self.id, self.string, self.type)
 
-
-class EntityDocument(object):
+class Document(object):
     """
-    Document with its entity mentions
+    Document with its tokens and entity mentions
     :list mentions: List of entity mentions
+    :list tokens: List of tokens
     :string docid: Doc ID of the original document
     :string lang: 3 letter lang code (see the Lang class). It is a guess from docid.
     """
 
-    def __init__(self, mentions):
+    def __init__(self, mentions, tokens):
         self.mentions = mentions
+        self.tokens = tokens
         self.docid = self.mentions[0].docid

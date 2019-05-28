@@ -46,8 +46,14 @@ class DocumentPreparerTest(unittest.TestCase):
         ]
         doc = preparer.process(rows)
         self.assertEqual(2, len(doc.mentions))
+        self.assertEqual(4, len(doc.tokens))
         self.assertEqual((0, 6), doc.mentions[0].offsets)
+        self.assertEqual((0, 0), doc.mentions[0].token_offsets)
+        self.assertEqual('George', ' '.join(doc.tokens[doc.mentions[0].token_offsets[0]:doc.mentions[0].token_offsets[1]+1]))
+        self.assertEqual('Tony', ' '.join(doc.tokens[doc.mentions[1].token_offsets[0]:doc.mentions[1].token_offsets[1]+1]))
         self.assertEqual('doc1', doc.mentions[1].docid)
+        self.assertEqual('doc1', doc.docid)
+        self.assertEqual((1, 1), doc.mentions[1].token_offsets)
         self.assertEqual(EntityType.PER, doc.mentions[1].type)
 
     def test_with_ending_i_tag(self):
@@ -61,7 +67,12 @@ class DocumentPreparerTest(unittest.TestCase):
         ]
         doc = preparer.process(rows)
         self.assertEqual(1, len(doc.mentions))
+        self.assertEqual(5, len(doc.tokens))
+        self.assertEqual('doc1', doc.docid)
         self.assertEqual('Thomas Jefferson', doc.mentions[0].string)
+        self.assertEqual((3,4), doc.mentions[0].token_offsets)
+        self.assertEqual('Thomas Jefferson', ' '.join(doc.tokens[doc.mentions[0].token_offsets[0]:doc.mentions[0].token_offsets[1]+1]))
+
 
     def test_with_no_tags(self):
         preparer = DocumentPreparer(InProcessIncremental())

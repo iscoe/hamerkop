@@ -1,7 +1,7 @@
 import collections
 import csv
 import os
-from .core import EntityMention, EntityDocument
+from .core import EntityMention, Document
 
 Row = collections.namedtuple('Row', 'token tag docid offsets')
 
@@ -71,6 +71,8 @@ class DocumentPreparer(object):
         :param rows: list of Row namedtuples
         :return: EntityDocument or None if no mentions
         """
+        tokens = []
+        token_index = 0
         mentions = []
         mention_rows = []
         in_mention = False
@@ -78,28 +80,37 @@ class DocumentPreparer(object):
             if in_mention:
                 if row.tag[0] != 'I':
                     in_mention = False
-                    mentions.append(self._extract(mention_rows))
+                    mentions.append(self._extract(mention_rows, token_start))
                     mention_rows = []
                 else:
                     mention_rows.append(row)
             if row.tag[0] == 'B':
                 in_mention = True
+                token_start = token_index
                 mention_rows.append(row)
-        if in_mention:
-            mentions.append(self._extract(mention_rows))
-        if mentions:
-            return EntityDocument(mentions)
 
-    def _extract(self, rows):
+            tokens.append(row.token)
+            token_index += 1
+
+        if in_mention:
+            mentions.append(self._extract(mention_rows, token_start))
+
+        if mentions:
+            return Document(mentions, tokens)
+
+    def _extract(self, rows, token_start):
         first_row = rows.pop(0)
         name = first_row.token
-        start = first_row.offsets[0]
-        stop = first_row.offsets[1]
+        ch_start = first_row.offsets[0]
+        ch_stop = first_row.offsets[1]
+        token_stop = token_start
         docid = first_row.docid
         type = first_row.tag[2:]
         for row in rows:
             name = ' '.join((name, row.token))
-            stop = row.offsets[1]
-        mention = EntityMention(name, docid, (start, stop), type)
+            ch_stop = row.offsets[1]
+            token_stop += 1
+        token_offsets = (token_start, token_stop)
+        mention = EntityMention(name, docid, (ch_start, ch_stop), token_offsets,  type)
         self.id_assigner.assign(mention)
         return mention
