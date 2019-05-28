@@ -103,7 +103,7 @@ class DocumentPreparer(object):
         name = first_row.token
         ch_start = first_row.offsets[0]
         ch_stop = first_row.offsets[1]
-        token_stop = token_start
+        token_stop = token_start + 1
         docid = first_row.docid
         type = first_row.tag[2:]
         for row in rows:
