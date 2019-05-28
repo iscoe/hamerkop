@@ -1,4 +1,3 @@
-
 class EntityType(object):
     PER = "PER"
     ORG = "ORG"
@@ -99,6 +98,7 @@ class EntityMention(object):
 
     def __repr__(self):
         return "EntityMention({}, {}, {})".format(self.id, self.string, self.type)
+
 
 class Document(object):
     """

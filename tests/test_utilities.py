@@ -26,7 +26,6 @@ class CaseInsensitiveSetTest(unittest.TestCase):
 
 
 class IdentifierTest(unittest.TestCase):
-
     def test_simple(self):
         mention = EntityMention("Ted", "IL9_SM_001", (4, 8), (0, 1), EntityType.PER)
         ia = InProcessIncremental()

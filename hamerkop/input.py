@@ -62,6 +62,7 @@ class DocumentPreparer(object):
     This does not check for conditions like B-PER I-ORG.
     This passes all tag types so B-DOG will end up as a mention.
     """
+
     def __init__(self, id_assigner):
         self.id_assigner = id_assigner
 
@@ -111,6 +112,6 @@ class DocumentPreparer(object):
             ch_stop = row.offsets[1]
             token_stop += 1
         token_offsets = (token_start, token_stop)
-        mention = EntityMention(name, docid, (ch_start, ch_stop), token_offsets,  type)
+        mention = EntityMention(name, docid, (ch_start, ch_stop), token_offsets, type)
         self.id_assigner.assign(mention)
         return mention
