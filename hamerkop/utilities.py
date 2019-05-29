@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 import collections
 
 
@@ -36,15 +36,13 @@ class CaseInsensitiveSet(collections.MutableSet):
         return '%s(%r)' % (self.__class__.__name__, self._store)
 
 
-class Identifier(object):
-    """Abstract base class for creating unique identifiers"""
-    __metaclass__ = ABCMeta
-
+class Identifier(ABC):
+    """Create unique identifiers"""
     @abstractmethod
     def assign(self, mention):
         """
         Assign an identifier to a mention
-        :param mention: EntityMention
+        :param mention: Mention
         :return reference to the mention passed to method
         """
         pass

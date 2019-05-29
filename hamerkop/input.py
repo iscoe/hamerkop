@@ -1,7 +1,7 @@
 import collections
 import csv
 import os
-from .core import EntityMention, Document
+from .core import Mention, Document
 
 Row = collections.namedtuple('Row', 'token tag docid offsets')
 
@@ -70,7 +70,7 @@ class DocumentPreparer(object):
         """
         Turn a list of rows into entity mentions
         :param rows: list of Row namedtuples
-        :return: EntityDocument or None if no mentions
+        :return: Document or None if no mentions
         """
         tokens = []
         token_index = 0
@@ -112,6 +112,6 @@ class DocumentPreparer(object):
             ch_stop = row.offsets[1]
             token_stop += 1
         token_offsets = (token_start, token_stop)
-        mention = EntityMention(name, docid, (ch_start, ch_stop), token_offsets, type)
+        mention = Mention(name, docid, (ch_start, ch_stop), token_offsets, type)
         self.id_assigner.assign(mention)
         return mention
