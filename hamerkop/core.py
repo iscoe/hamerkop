@@ -1,4 +1,5 @@
 class EntityType:
+    """LoReHLT entity types"""
     PER = "PER"
     ORG = "ORG"
     GPE = "GPE"
@@ -19,6 +20,7 @@ class EntityType:
 
 
 class EntityContext:
+    """LoReHLT KB entity features"""
     gpe_loc_of_association = 0
     # PER
     title_or_position = 1

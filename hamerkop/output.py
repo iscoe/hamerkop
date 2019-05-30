@@ -2,7 +2,7 @@
 
 class OutputWriter:
     """
-    Writes a file that conforms to the LoreHLT submission format:
+    Writes a file that conforms to the LoReHLT submission format:
       System Mention Text Doc:Offsets KB_ID Entity_Type Mention_Type Confidence
 
     Sets the KB_ID to NIL for mentions without a match
