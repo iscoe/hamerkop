@@ -4,7 +4,8 @@ import csv
 import logging
 import os
 
-from .core import Entity
+from .core import Entity, EntityType
+from .utilities import CaseInsensitiveDict
 
 logger = logging.getLogger(__name__)
 
@@ -177,3 +178,29 @@ class MemoryKB(KB):
     @staticmethod
     def _generate_entity(row):
         return Entity(row[2], row[1], row[3], row[0], None, row[5], row[6], row[12], row[21])
+
+
+class ExactMatchMemoryNameSearch(NameSearch):
+    """
+    Builds an in memory index
+    """
+    def __init__(self, kb):
+        self.kb = kb
+        self.index = self._build_index()
+
+    def find(self, name, type, limit=25):
+        if name in self.index[type]:
+            return self.kb.get_entities(self.index[type][name])
+        else:
+            return []
+
+    def _build_index(self):
+        index = {}
+        for entity_type in EntityType.TYPES:
+            index[entity_type] = CaseInsensitiveDict()
+        for entity in self.kb:
+            for name in entity.names:
+                if name not in index[entity.type]:
+                    index[entity.type][name] = []
+                index[entity.type][name].append(entity.id)
+        return index

@@ -31,3 +31,16 @@ class MemoryKBTest(unittest.TestCase):
         entity_ids = [entity.id for entity in self.kb]
         self.assertEqual(4, len(entity_ids))
         self.assertIn('10', entity_ids)
+
+
+class ExactMatchMemoryNameSearchTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        entities_filename = get_filename('data/kb/small_kb_entities.tab')
+        alt_names_filename = get_filename('data/kb/small_kb_alternate_names.tab')
+        cls.kb = MemoryKB(entities_filename, alt_names_filename)
+
+    def test(self):
+        index = ExactMatchMemoryNameSearch(self.kb)
+        entities = index.find('John', EntityType.PER)
+        self.assertEqual(2, len(entities))
