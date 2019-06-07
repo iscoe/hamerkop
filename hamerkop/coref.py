@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from .core import MentionChain
+
 
 class CoRef(ABC):
     """
@@ -21,5 +23,5 @@ class UnchainedCoRef(CoRef):
     Each mention gets its own chain
     """
     def coref(self, document):
-        document.mention_chains = [[mention] for mention in document.mentions]
+        document.mention_chains = [MentionChain([mention]) for mention in document.mentions]
         return document
