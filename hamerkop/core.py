@@ -1,3 +1,6 @@
+import collections
+
+
 class EntityType:
     """LoReHLT entity types"""
     PER = "PER"
@@ -17,6 +20,13 @@ class EntityType:
             return cls.GPE
         if s == cls.LOC:
             return cls.LOC
+
+
+class EntityOrigin:
+    GEO = "geonames"
+    WLL = "cia word leaders"
+    APB = "cia word fact book orgs"
+    AUG = "augmentation"
 
 
 class EntityContext:
@@ -151,6 +161,31 @@ class MentionChain:
         self.mentions = mentions
         self.candidates = None
         self.entity = None
+        self._name = None
+
+    @property
+    def best_name(self):
+        """Defaults to most common name string"""
+        if self._name is None:
+            counts = collections.Counter([x.string for x in self.mentions])
+            names = counts.most_common(1)
+            if names:
+                return names[0][0]
+            else:
+                return None
+        else:
+            return self._name
+
+    @best_name.setter
+    def best_name(self, value):
+        self._name = value
+
+    @property
+    def type(self):
+        return self.mentions[0].type
+
+    def __repr__(self):
+        return "MentionChain for {}: {} mentions".format(self.best_name, len(self.mentions))
 
 
 class Document:
