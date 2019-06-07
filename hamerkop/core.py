@@ -184,6 +184,12 @@ class MentionChain:
     def type(self):
         return self.mentions[0].type
 
+    def __len__(self):
+        if self.mentions:
+            return len(self.mentions)
+        else:
+            return 0
+
     def __repr__(self):
         return "MentionChain for {}: {} mentions".format(self.best_name, len(self.mentions))
 
