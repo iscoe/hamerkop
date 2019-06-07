@@ -2,6 +2,7 @@ from .candidates import *
 from .core import *
 from .coref import *
 from .input import *
+from .kb import *
 from .lang import *
 from .output import *
 from .preprocessor import *
