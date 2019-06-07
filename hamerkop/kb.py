@@ -149,8 +149,8 @@ class MemoryKB(KB):
         for row in entity_rows:
             if row['entityid'] not in entities:
                 entity = Entity(row['entityid'], row['entity_type'], row['name'], row['origin'],
-                            None, str(row['latitude']), str(row['longitude']),
-                            row['country_code'], row['population'], row['external_link'])
+                                None, str(row['latitude']), str(row['longitude']),
+                                row['country_code'], row['population'], row['external_link'])
                 entities[entity.id] = entity
         for row in name_rows:
             entities[row['entityid']].names.add(row['alternatename'])

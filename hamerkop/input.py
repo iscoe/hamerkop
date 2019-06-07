@@ -73,7 +73,7 @@ class DocumentPreparer(object):
         :return: Document or None if no mentions
         """
         tokens = []
-        token_index = 0
+        token_index = token_start = 0
         mentions = []
         mention_rows = []
         in_mention = False
