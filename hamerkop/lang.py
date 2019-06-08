@@ -215,6 +215,15 @@ class LangDetector(ABC):
         pass
 
 
+class FixedLang(LangDetector):
+    """Hard coded language"""
+    def __init__(self, lang):
+        self.lang = lang
+
+    def detect(self, filename, tokens):
+        return self.lang
+
+
 class NgramLangDetector(LangDetector):
     """
     Ngram-based language profiles from Wikipedia

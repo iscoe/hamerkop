@@ -1,7 +1,10 @@
+from abc import ABC, abstractmethod
 import re
 import string
 import sys
 import unicodedata
+
+from .utilities import CaseInsensitiveDict
 
 
 class String:
@@ -57,3 +60,31 @@ class String:
     def remove_double_letter(str):
         """Remove the second letter of double letters"""
         return re.sub(r'([a-zA-Z])\1+', r'\1', str)
+
+
+class Translator(ABC):
+    """Transliteration or translation into English"""
+    @abstractmethod
+    def translate(self, string, lang):
+        """
+        Translate or transliterate the string
+
+        Can return None if not translation is available
+        :param string: string to be translated
+        :param lang: Lang code
+        :return: string in latin characters
+        """
+        pass
+
+
+class DictTranslator(Translator):
+    """
+    Use a dictionary of source -> destination translations.
+    Does not do partial translations, only full strings
+    """
+    def __init__(self, trans_map):
+        self.map = CaseInsensitiveDict(trans_map)
+
+    def translate(self, string, lang):
+        if string in self.map:
+            return self.map[string]

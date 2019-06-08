@@ -1,15 +1,18 @@
 import collections
 import csv
 from .core import Mention, Document
+from .lang import NgramLangDetector
 from .utilities import InProcessIncremental
 
 
 class InputReader:
-    def __init__(self, fp, id_assigner=None):
+    def __init__(self, fp, id_assigner=None, lang_detector=None):
         self.reader = read_conll(fp)
         if id_assigner is None:
             id_assigner = InProcessIncremental()
-        self.preparer = DocumentPreparer(id_assigner)
+        if lang_detector is None:
+            lang_detector = NgramLangDetector()
+        self.preparer = DocumentPreparer(id_assigner, lang_detector)
 
     def __iter__(self):
         return self
@@ -75,8 +78,9 @@ class DocumentPreparer(object):
     This passes all tag types so B-DOG will end up as a mention.
     """
 
-    def __init__(self, id_assigner):
+    def __init__(self, id_assigner, lang_detector):
         self.id_assigner = id_assigner
+        self.lang_detector = lang_detector
 
     def process(self, rows):
         """
@@ -109,7 +113,9 @@ class DocumentPreparer(object):
             mentions.append(self._extract(mention_rows, token_start))
 
         if mentions:
-            return Document(mentions, tokens)
+            filename = mentions[0].docid
+            lang = self.lang_detector.detect(filename, tokens)
+            return Document(mentions, tokens, lang)
 
     def _extract(self, rows, token_start):
         first_row = rows.pop(0)

@@ -1,6 +1,8 @@
 import unittest
 from hamerkop.preprocessor import *
 from hamerkop.core import Document, Mention
+from hamerkop.lang import Lang
+from hamerkop.string import DictTranslator
 
 
 class CascadePreprocessorTest(unittest.TestCase):
@@ -13,7 +15,7 @@ class CascadePreprocessorTest(unittest.TestCase):
             Mention('Leo Tolstoy', 'doc34', (1, 3), (), EntityType.PER),
             Mention('Leo Tolstoy writes long novels', 'doc34', (1, 3), (), EntityType.PER)
         ]
-        document = Document(mentions, [])
+        document = Document(mentions, [], Lang.EN)
         processor.process(document)
         self.assertEqual(2, len(document.mentions))
         self.assertNotIn(mentions[1], document.mentions)
@@ -28,7 +30,7 @@ class TypeValidatorTest(unittest.TestCase):
             Mention('Saʼud Arabiyaa', 'doc34', (1, 3), (), 'BGE'),
             Mention('Edward', 'doc34', (1, 3), (), EntityType.PER),
         ]
-        document = Document(mentions, [])
+        document = Document(mentions, [], Lang.EN)
         processor.process(document)
         self.assertEqual(2, len(document.mentions))
 
@@ -39,7 +41,7 @@ class TextNormalizerTest(unittest.TestCase):
         mentions = [
             Mention('bw’Uburayi', 'doc34', (1, 3), (), EntityType.GPE),
         ]
-        document = Document(mentions, [])
+        document = Document(mentions, [], Lang.EN)
         processor.process(document)
         self.assertEqual(1, len(document.mentions))
         self.assertEqual("bw'Uburayi", document.mentions[0].string)
@@ -54,7 +56,7 @@ class GarbageRemoverTest(unittest.TestCase):
             Mention('http://www.google.com', 'doc34', (1, 3), (), EntityType.PER),
             Mention('Leo Tolstoy', 'doc34', (1, 3), (), EntityType.PER)
         ]
-        document = Document(mentions, [])
+        document = Document(mentions, [], Lang.EN)
         processor.process(document)
         self.assertEqual(3, len(document.mentions))
         self.assertNotIn(mentions[2], document.mentions)
@@ -66,7 +68,7 @@ class FixTypeTest(unittest.TestCase):
         mentions = [
             Mention('Africa', 'doc34', (1, 3), (), EntityType.GPE),
         ]
-        document = Document(mentions, [])
+        document = Document(mentions, [], Lang.EN)
         processor.process(document)
         self.assertEqual(1, len(document.mentions))
         self.assertEqual(EntityType.LOC, document.mentions[0].type)
@@ -79,7 +81,7 @@ class TooLongMentionRemoverTest(unittest.TestCase):
             Mention('Henry J. Adams', 'doc34', (1, 3), (), EntityType.PER),
             Mention('Henry Adams eats mice', 'doc34', (1, 3), (), EntityType.PER)
         ]
-        document = Document(mentions, [])
+        document = Document(mentions, [], Lang.EN)
         processor.process(document)
         self.assertEqual(1, len(document.mentions))
         self.assertEqual('Henry J. Adams', document.mentions[0].string)
@@ -93,7 +95,7 @@ class BlacklistTest(unittest.TestCase):
             Mention('Bulgaria', 'doc34', (1, 3), (), EntityType.PER),
             Mention('Leo Tolstoy', 'doc34', (1, 3), (), EntityType.PER)
         ]
-        document = Document(mentions, [])
+        document = Document(mentions, [], Lang.EN)
         processor.process(document)
         self.assertEqual(2, len(document.mentions))
         self.assertNotIn(mentions[1], document.mentions)
@@ -106,7 +108,7 @@ class AcronymReplacerTest(unittest.TestCase):
             Mention('UN', 'IL5_doc34', (1, 3), (), EntityType.GPE),
             Mention('un', 'IL5_doc34', (4, 5), (), EntityType.GPE),
         ]
-        document = Document(mentions, [])
+        document = Document(mentions, [], Lang.EN)
         processor.process(document)
         self.assertEqual(2, len(document.mentions))
         self.assertEqual('United Nations', document.mentions[0].string)
@@ -118,8 +120,23 @@ class AcronymReplacerTest(unittest.TestCase):
             Mention('UN', 'IL5_doc34', (1, 3), (), EntityType.GPE),
             Mention('un', 'IL5_doc34', (4, 5), (), EntityType.GPE),
         ]
-        document = Document(mentions, [])
+        document = Document(mentions, [], Lang.EN)
         processor.process(document)
         self.assertEqual(2, len(document.mentions))
         self.assertEqual('United Nations', document.mentions[0].string)
         self.assertEqual('United Nations', document.mentions[1].string)
+
+
+class NameTranslatorTest(unittest.TestCase):
+    def test(self):
+        translator = DictTranslator({'Bodensee': 'Lake Constance'})
+        processor = NameTranslator(translator)
+        mentions = [
+            Mention('Bodensee', 'doc34', (1, 3), (), EntityType.GPE),
+            Mention('Bulgaria', 'doc34', (1, 3), (), EntityType.GPE),
+        ]
+        document = Document(mentions, [], Lang.DE)
+        processor.process(document)
+        self.assertEqual('Lake Constance', mentions[0].string)
+        self.assertEqual('Bodensee', mentions[0].native_string)
+        self.assertIsNone(mentions[1].native_string)

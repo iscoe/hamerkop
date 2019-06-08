@@ -2,6 +2,7 @@ import os
 import unittest
 from hamerkop.input import *
 from hamerkop.core import EntityType
+from hamerkop.lang import Lang, FixedLang
 from hamerkop.utilities import InProcessIncremental
 
 
@@ -31,7 +32,7 @@ class ReadCoNLLTest(unittest.TestCase):
 
 class DocumentPreparerTest(unittest.TestCase):
     def test_with_consecutive_b_tags(self):
-        preparer = DocumentPreparer(InProcessIncremental())
+        preparer = DocumentPreparer(InProcessIncremental(), FixedLang(Lang.EN))
         rows = [
             Row('George', 'B-PER', 'doc1', (0, 6)),
             Row('Tony', 'B-PER', 'doc1', (8, 12)),
@@ -53,7 +54,7 @@ class DocumentPreparerTest(unittest.TestCase):
         self.assertEqual(EntityType.PER, doc.mentions[1].type)
 
     def test_with_ending_i_tag(self):
-        preparer = DocumentPreparer(InProcessIncremental())
+        preparer = DocumentPreparer(InProcessIncremental(), FixedLang(Lang.EN))
         rows = [
             Row('Here', 'O', 'doc1', (0, 4)),
             Row('are', 'O', 'doc1', (5, 8)),
@@ -71,7 +72,7 @@ class DocumentPreparerTest(unittest.TestCase):
                          ' '.join(doc.tokens[doc.mentions[0].token_offsets[0]:doc.mentions[0].token_offsets[1]]))
 
     def test_with_no_tags(self):
-        preparer = DocumentPreparer(InProcessIncremental())
+        preparer = DocumentPreparer(InProcessIncremental(), FixedLang(Lang.EN))
         rows = [
             Row('Here', 'O', 'doc1', (0, 4)),
             Row('are', 'O', 'doc1', (5, 8)),

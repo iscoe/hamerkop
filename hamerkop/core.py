@@ -133,6 +133,7 @@ class Mention:
     :tuple token_offsets: Token offsets into the original document
     :string type: Entity type. See EntityType.
     :string original_string: Original mention string from the document
+    :string native_string: Set if string is translated or transliterated
     """
 
     def __init__(self, string, docid, offsets, token_offsets, type, id=None):
@@ -140,6 +141,7 @@ class Mention:
         self.id = id
         self.string = string
         self.original_string = string
+        self.native_string = None
         self.docid = docid
         self.offsets = offsets
         self.token_offsets = token_offsets
@@ -195,9 +197,10 @@ class Document:
     :list mention_chains: List of MentionChain objects
     """
 
-    def __init__(self, mentions, tokens):
+    def __init__(self, mentions, tokens, lang):
         self.mentions = mentions
         self.tokens = tokens
+        self.lang = lang
         self.docid = self.mentions[0].docid
         self.mention_chains = None
 

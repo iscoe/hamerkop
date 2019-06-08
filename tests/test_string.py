@@ -1,5 +1,6 @@
 import collections
 import unittest
+from hamerkop.lang import Lang
 from hamerkop.string import *
 
 
@@ -51,3 +52,16 @@ class StringUtilTest(unittest.TestCase):
         ]
         for test_case in test_cases:
             self.assertEqual(test_case.expect, String.remove_double_letter(test_case.input))
+
+
+class DictTranslatorTest(unittest.TestCase):
+    def test(self):
+        mapping = {'Köln': 'Cologne'}
+        test_cases = [
+            TestCase('Köln', 'Cologne'),
+            TestCase('In Köln', None),
+            TestCase('köln', 'Cologne'),
+        ]
+        translator = DictTranslator(mapping)
+        for test_case in test_cases:
+            self.assertEqual(test_case.expect, translator.translate(test_case.input, Lang.DE))

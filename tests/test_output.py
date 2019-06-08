@@ -3,6 +3,7 @@ import os
 import unittest
 from hamerkop.output import *
 from hamerkop.core import Document, Entity, EntityOrigin, EntityType, Mention, MentionChain
+from hamerkop.lang import Lang
 
 
 def get_filename(filename):
@@ -22,7 +23,7 @@ class OutputWriterTest(unittest.TestCase):
         ]
         chains[0].entity = Entity('67', EntityType.PER, 'Henry', EntityOrigin.WLL)
         chains[1].entity = None
-        doc = Document(chains[0].mentions + chains[1].mentions, [])
+        doc = Document(chains[0].mentions + chains[1].mentions, [], Lang.EN)
         doc.mention_chains = chains
 
         buffer = io.StringIO()
