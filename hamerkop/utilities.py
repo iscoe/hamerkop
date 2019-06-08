@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 import collections
 
 
@@ -36,15 +36,44 @@ class CaseInsensitiveSet(collections.MutableSet):
         return '%s(%r)' % (self.__class__.__name__, self._store)
 
 
-class Identifier(object):
-    """Abstract base class for creating unique identifiers"""
-    __metaclass__ = ABCMeta
+class CaseInsensitiveDict(collections.MutableMapping):
+    """
+    Wraps a dictionary forcing all key operations to be lower case
+    """
+    def __init__(self, data=None):
+        self._store = dict()
+        if data is not None:
+            self.update(data)
 
+    def __setitem__(self, key, value):
+        self._store[key.lower()] = value
+
+    def __getitem__(self, key):
+        return self._store[key.lower()]
+
+    def __delitem__(self, key):
+        del self._store[key.lower()]
+
+    def __contains__(self, key):
+        return self._store.__contains__(key.lower())
+
+    def __len__(self):
+        return len(self._store)
+
+    def __iter__(self):
+        return self._store.__iter__()
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, self._store)
+
+
+class Identifier(ABC):
+    """Create unique identifiers"""
     @abstractmethod
     def assign(self, mention):
         """
         Assign an identifier to a mention
-        :param mention: EntityMention
+        :param mention: Mention
         :return reference to the mention passed to method
         """
         pass

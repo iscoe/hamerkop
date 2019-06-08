@@ -1,4 +1,8 @@
-class EntityType(object):
+import collections
+
+
+class EntityType:
+    """LoReHLT entity types"""
     PER = "PER"
     ORG = "ORG"
     GPE = "GPE"
@@ -18,7 +22,15 @@ class EntityType(object):
             return cls.LOC
 
 
-class EntityContext(object):
+class EntityOrigin:
+    GEO = "geonames"
+    WLL = "cia word leaders"
+    APB = "cia word fact book orgs"
+    AUG = "augmentation"
+
+
+class EntityContext:
+    """LoReHLT KB entity features"""
     gpe_loc_of_association = 0
     # PER
     title_or_position = 1
@@ -74,7 +86,44 @@ class EntityContext(object):
         return cls.TABLE[index]
 
 
-class EntityMention(object):
+class Entity:
+    """
+    Entity from a Knowledge Base
+    :string id: Entity ID
+    :string type: Entity type
+    :string name: Canonical name from the KB
+    :set names: All names for entity from the KB
+    :string type: EntityType
+    :string origin: Origin of the entity
+    :string latitude: Latitude of entity for most GPE and LOC
+    :string longitude: Longitude of entity for most GPE and LOC
+    :string country: ISO-3166 2-letter country code for GPE and LOC
+    :int population: Population count for some GPE and LOC
+    :dict context: Other fields like title, role, family members, etc.
+    :list urls: All websites for this entity
+    """
+
+    def __init__(self, id, type, name, origin, context=None, lat=None, lon=None, country=None, pop=None, urls=None):
+        self.id = id
+        self.type = type
+        self.name = name
+        self.names = {name}
+        self.source = origin
+        self.context = context if context else {}
+        self.latitude = lat
+        self.longitude = lon
+        self.country = country
+        self.population = int(pop) if pop else 0
+        self.urls = urls.split('|') if urls else []
+
+    def __repr__(self):
+        return "Entity({}, {}, {})".format(self.id, self.name, self.type)
+
+    def __str__(self):
+        return "{}\t{}\t{}\t{}\t{}".format(self.id, self.name, self.type, self.country, ','.join(self.names))
+
+
+class Mention:
     """
     Entity Mention
     :string id: Unique mention id
@@ -91,26 +140,96 @@ class EntityMention(object):
         self.id = id
         self.string = string
         self.original_string = string
-        self.translation = False
         self.docid = docid
         self.offsets = offsets
         self.token_offsets = token_offsets
         self.type = type
 
     def __repr__(self):
-        return "EntityMention({}, {}, {})".format(self.id, self.string, self.type)
+        return "Mention({}, {}, {})".format(self.id, self.string, self.type)
 
 
-class Document(object):
+class MentionChain:
+    """
+    A chain of mentions from a document
+    :list mentions: The list of mentions for this chain
+    :list candidates: The list of candidate entities for this chain
+    :Entity entity: KB entity that is best match or None
+    """
+
+    def __init__(self, mentions):
+        self.mentions = mentions
+        self.candidates = None
+        self.entity = None
+        self._name = None
+
+    @property
+    def name(self):
+        """Best name string for mention chain"""
+        if self._name is None:
+            # longest name string is default
+            self._name = max([x.string for x in self.mentions], key=len)
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+
+    @property
+    def type(self):
+        return self.mentions[0].type
+
+    def __len__(self):
+        return len(self.mentions)
+
+    def __repr__(self):
+        return "MentionChain for {}: {} mentions".format(self.name, len(self.mentions))
+
+
+class Document:
     """
     Document with its tokens and entity mentions
     :list mentions: List of entity mentions
     :list tokens: List of tokens
     :string docid: Doc ID of the original document
-    :string lang: 3 letter lang code (see the Lang class). It is a guess from docid.
+    :list mention_chains: List of MentionChain objects
     """
 
     def __init__(self, mentions, tokens):
         self.mentions = mentions
         self.tokens = tokens
         self.docid = self.mentions[0].docid
+        self.mention_chains = None
+
+    def __repr__(self):
+        return "Document({}) with {} mentions".format(self.docid, len(self.mentions))
+
+
+class Pipeline:
+    """
+    Entity linking pipeline
+    """
+
+    def __init__(self, documents, preprocessor, coref, candidate_gen, resolver, writer):
+        """
+        :param documents: Iterator that produces Document objects
+        :param preprocessor: Mention preprocessor
+        :param coref: Coreference component
+        :param candidate_gen: Candidate generator
+        :param resolver: Entity resolution component
+        :param writer: Output writer
+        """
+        self.documents = documents
+        self.preprocessor = preprocessor
+        self.coref = coref
+        self.candidate_gen = candidate_gen
+        self.resolver = resolver
+        self.writer = writer
+
+    def run(self):
+        for doc in self.documents:
+            self.preprocessor.process(doc)
+            self.coref.coref(doc)
+            self.candidate_gen.process(doc)
+            self.resolver.resolve(doc)
+            self.writer.write(doc)

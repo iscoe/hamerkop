@@ -9,28 +9,24 @@ def get_filename(filename):
     return os.path.join(os.path.dirname(__file__), filename)
 
 
-class CoNLLReaderTest(unittest.TestCase):
+class ReadCoNLLTest(unittest.TestCase):
     def test_simple(self):
         filename = get_filename('data/conll/conll_reader_test_no_header')
-        data = [x for x in conll_reader(filename)]
-        self.assertEqual(2, len(data))
-        self.assertEqual(9, len(data[0]))
-        self.assertEqual(6, len(data[1]))
-        self.assertEqual('George', data[0][0].token)
-        self.assertEqual('B-LOC', data[0][8].tag)
-        self.assertEqual('IL5_DF_020521_20170505_H0040MWIB', data[0][1].docid)
-        self.assertEqual((19, 21), data[0][5].offsets)
+        with open(filename, 'r') as fp:
+            data = [x for x in read_conll(fp)]
+            self.assertEqual(2, len(data))
+            self.assertEqual(9, len(data[0]))
+            self.assertEqual(6, len(data[1]))
+            self.assertEqual('George', data[0][0].token)
+            self.assertEqual('B-LOC', data[0][8].tag)
+            self.assertEqual('IL5_DF_020521_20170505_H0040MWIB', data[0][1].docid)
+            self.assertEqual((19, 21), data[0][5].offsets)
 
     def test_with_header(self):
         filename = get_filename('data/conll/conll_reader_test_header')
-        with self.assertRaises(CoNLLReaderException) as context:
-            gen = conll_reader(filename)
+        with open(filename, 'r') as fp, self.assertRaises(CoNLLReaderException) as context:
+            gen = read_conll(fp)
             next(gen)
-
-    def test_with_missing_file(self):
-        filename = get_filename('data/conll/conll_reader_test_not_exist')
-        with self.assertRaises(CoNLLReaderException) as context:
-            data = [x for x in conll_reader(filename)]
 
 
 class DocumentPreparerTest(unittest.TestCase):
@@ -85,3 +81,12 @@ class DocumentPreparerTest(unittest.TestCase):
         ]
         doc = preparer.process(rows)
         self.assertIsNone(doc)
+
+
+class InputReaderTest(unittest.TestCase):
+    def test(self):
+        filename = get_filename('data/conll/conll_reader_test_no_header')
+        with open(filename, 'r') as fp:
+            reader = InputReader(fp)
+            docs = list(reader)
+            self.assertEqual(2, len(docs))
