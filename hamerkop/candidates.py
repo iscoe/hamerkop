@@ -45,7 +45,7 @@ class IndexBasedGenerator(CandidateGenerator):
         self.index = index
 
     def find(self, mention_chain):
-        name = mention_chain.best_name
+        name = mention_chain.name
         candidates = self.index.find(name, mention_chain.type, self.max)
         logger.debug("{}({}): {} candidates from {}".format(
             name, mention_chain.type, len(mention_chain.candidates), type(self.index).__name__))
@@ -64,14 +64,14 @@ class CombiningGenerator(CandidateGenerator):
         for generator in self.generators:
             for entity in generator.find(mention_chain):
                 candidate_dict[entity.id] = entity
-        logger.debug("{}({}): {} total candidates".format(mention_chain.best_name,
+        logger.debug("{}({}): {} total candidates".format(mention_chain.name,
                                                           mention_chain.type, len(candidate_dict)))
         return list(candidate_dict.values())
 
 
 class CachingGenerator(CandidateGenerator):
     """
-    Caches candidates based on the mention chain (best name and type).
+    Caches candidates based on the mention chain (name and type).
     This is a memory cache.
     """
     def __init__(self, generator):
@@ -90,4 +90,4 @@ class CachingGenerator(CandidateGenerator):
         return candidates
 
     def _gen_key(self, mention_chain):
-        return mention_chain.best_name.lower() + ':' + mention_chain.type
+        return mention_chain.name.lower() + ':' + mention_chain.type

@@ -164,20 +164,15 @@ class MentionChain:
         self._name = None
 
     @property
-    def best_name(self):
-        """Defaults to most common name string"""
+    def name(self):
+        """Best name string for mention chain"""
         if self._name is None:
-            counts = collections.Counter([x.string for x in self.mentions])
-            names = counts.most_common(1)
-            if names:
-                return names[0][0]
-            else:
-                return None
-        else:
-            return self._name
+            # longest name string is default
+            self._name = max([x.string for x in self.mentions], key=len)
+        return self._name
 
-    @best_name.setter
-    def best_name(self, value):
+    @name.setter
+    def name(self, value):
         self._name = value
 
     @property
@@ -185,13 +180,10 @@ class MentionChain:
         return self.mentions[0].type
 
     def __len__(self):
-        if self.mentions:
-            return len(self.mentions)
-        else:
-            return 0
+        return len(self.mentions)
 
     def __repr__(self):
-        return "MentionChain for {}: {} mentions".format(self.best_name, len(self.mentions))
+        return "MentionChain for {}: {} mentions".format(self.name, len(self.mentions))
 
 
 class Document:
