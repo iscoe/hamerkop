@@ -119,17 +119,13 @@ class MemoryKB(KB):
     """
     KB backed by a python dictionary for smaller kbs
     """
-    def __init__(self, entities_filename, alt_names_filename):
+    def __init__(self, entities_fp, alt_names_fp):
         """
-        :param entities_filename: filename for the entities file
-        :param alt_names_filename: filename for the alternate names file
+        :param entities_fp: handle for reading the entities file
+        :param alt_names_fp: handle for reading the alternate names file
         """
-        for filename in [entities_filename, alt_names_filename]:
-            if not os.path.exists(filename):
-                raise KBException("{} does not exist".format(filename))
-
-        self.entities = self._read_entities(entities_filename)
-        self._add_alt_names(self.entities, alt_names_filename)
+        self.entities = self._read_entities(entities_fp)
+        self._add_alt_names(self.entities, alt_names_fp)
 
     def size(self):
         return len(self.entities)
@@ -156,24 +152,22 @@ class MemoryKB(KB):
             entities[row['entityid']].names.add(row['alternatename'])
         return list(entities.values())
 
-    def _read_entities(self, filename):
+    def _read_entities(self, fp):
         entities = {}
-        with open(filename, 'r') as fp:
-            reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
-            next(reader)
-            for row in reader:
-                entity = self._generate_entity(row)
-                entities[entity.id] = entity
+        reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
+        next(reader)
+        for row in reader:
+            entity = self._generate_entity(row)
+            entities[entity.id] = entity
         return entities
 
-    def _add_alt_names(self, entities, filename):
-        with open(filename, 'r') as fp:
-            reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
-            next(reader)
-            for row in reader:
-                entity_id = row[0]
-                alt_name = row[1]
-                entities[entity_id].names.add(alt_name)
+    def _add_alt_names(self, entities, fp):
+        reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
+        next(reader)
+        for row in reader:
+            entity_id = row[0]
+            alt_name = row[1]
+            entities[entity_id].names.add(alt_name)
 
     @staticmethod
     def _generate_entity(row):

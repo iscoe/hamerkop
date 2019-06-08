@@ -12,7 +12,8 @@ class MemoryKBTest(unittest.TestCase):
     def setUpClass(cls):
         entities_filename = get_filename('data/kb/small_kb_entities.tab')
         alt_names_filename = get_filename('data/kb/small_kb_alternate_names.tab')
-        cls.kb = MemoryKB(entities_filename, alt_names_filename)
+        with open(entities_filename, 'r') as entities_fp, open(alt_names_filename, 'r') as names_fp:
+            cls.kb = MemoryKB(entities_fp, names_fp)
 
     def test_getting_person(self):
         entity = self.kb.get_entity('10')
@@ -38,7 +39,8 @@ class ExactMatchMemoryNameIndexTest(unittest.TestCase):
     def setUpClass(cls):
         entities_filename = get_filename('data/kb/small_kb_entities.tab')
         alt_names_filename = get_filename('data/kb/small_kb_alternate_names.tab')
-        cls.kb = MemoryKB(entities_filename, alt_names_filename)
+        with open(entities_filename, 'r') as entities_fp, open(alt_names_filename, 'r') as names_fp:
+            cls.kb = MemoryKB(entities_fp, names_fp)
 
     def test(self):
         index = ExactMatchMemoryNameIndex(self.kb)
