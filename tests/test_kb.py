@@ -33,7 +33,7 @@ class MemoryKBTest(unittest.TestCase):
         self.assertIn('10', entity_ids)
 
 
-class ExactMatchMemoryNameSearchTest(unittest.TestCase):
+class ExactMatchMemoryNameIndexTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         entities_filename = get_filename('data/kb/small_kb_entities.tab')
@@ -41,6 +41,6 @@ class ExactMatchMemoryNameSearchTest(unittest.TestCase):
         cls.kb = MemoryKB(entities_filename, alt_names_filename)
 
     def test(self):
-        index = ExactMatchMemoryNameSearch(self.kb)
+        index = ExactMatchMemoryNameIndex(self.kb)
         entities = index.find('John', EntityType.PER)
         self.assertEqual(2, len(entities))

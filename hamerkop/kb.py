@@ -99,7 +99,7 @@ class KB(ABC):
         pass
 
 
-class NameSearch(ABC):
+class NameIndex(ABC):
     """
     Find candidates based on a name string
     """
@@ -180,7 +180,7 @@ class MemoryKB(KB):
         return Entity(row[2], row[1], row[3], row[0], None, row[5], row[6], row[12], row[21])
 
 
-class ExactMatchMemoryNameSearch(NameSearch):
+class ExactMatchMemoryNameIndex(NameIndex):
     """
     Builds an in memory index
     """

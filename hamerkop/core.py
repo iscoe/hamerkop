@@ -235,6 +235,6 @@ class Pipeline:
         for doc in self.documents:
             self.preprocessor.process(doc)
             self.coref.coref(doc)
-            self.candidate_gen.find(doc)
+            self.candidate_gen.process(doc)
             self.resolver.resolve(doc)
             self.writer.write(doc)
