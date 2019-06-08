@@ -1,7 +1,22 @@
 import collections
 import csv
-import os
 from .core import Mention, Document
+from .utilities import InProcessIncremental
+
+
+class InputReader:
+    def __init__(self, fp, id_assigner=None):
+        self.reader = read_conll(fp)
+        if id_assigner is None:
+            id_assigner = InProcessIncremental()
+        self.preparer = DocumentPreparer(id_assigner)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self.preparer.process(next(self.reader))
+
 
 Row = collections.namedtuple('Row', 'token tag docid offsets')
 
@@ -10,50 +25,47 @@ class CoNLLReaderException(Exception):
     """An error occurred when reading and parsing a CoNLL file."""
 
 
-def conll_reader(filename):
+def read_conll(fp):
     """
     Generator that returns a list of Row tuples for each document
-    :param filename: CoNLL tsv file with columns: token tag token docid start stop sentence
+    :param fp: handle to CoNLL tsv file with columns: token tag token docid start stop sentence
     :return: list of Row tuples
     """
-    if not os.path.exists(filename):
-        raise CoNLLReaderException("{} does not exist".format(filename))
-    with open(filename, 'r') as fp:
-        reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
-        first_row = next(reader)
-        if not first_row:
-            raise CoNLLReaderException("csv reader cannot read first line of {}".format(filename))
-        if first_row[0].lower() in ['token', 'tok']:
-            raise CoNLLReaderException("Reader does not handle file with header: {}".format(filename))
-        fp.seek(0)
+    reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
+    first_row = next(reader)
+    if not first_row:
+        raise CoNLLReaderException("csv reader cannot read first line of {}".format(fp.name))
+    if first_row[0].lower() in ['token', 'tok']:
+        raise CoNLLReaderException("Reader does not handle file with header: {}".format(fp.name))
+    fp.seek(0)
 
-        token_index = 0
-        tag_index = 1
-        docid_index = 3
-        offsets_indexes = (4, 5)
+    token_index = 0
+    tag_index = 1
+    docid_index = 3
+    offsets_indexes = (4, 5)
 
-        rows = []
-        current_docid = None
-        for row in reader:
-            if len(row) < 6:
-                # sentence breaks are being ignored
-                continue
+    rows = []
+    current_docid = None
+    for row in reader:
+        if len(row) < 6:
+            # sentence breaks are ignored
+            continue
 
-            if not row[tag_index]:
-                raise RuntimeError("Bad conll format data: {}".format(row))
+        if not row[tag_index]:
+            raise RuntimeError("Bad conll format data: {}".format(row))
 
-            if current_docid is None:
-                current_docid = row[docid_index]
+        if current_docid is None:
+            current_docid = row[docid_index]
 
-            if row[docid_index] != current_docid:
-                yield rows
-                rows = []
-                current_docid = row[docid_index]
+        if row[docid_index] != current_docid:
+            yield rows
+            rows = []
+            current_docid = row[docid_index]
 
-            start = int(row[offsets_indexes[0]])
-            stop = int(row[offsets_indexes[1]])
-            rows.append(Row(row[token_index], row[tag_index], row[docid_index], (start, stop)))
-        yield rows
+        start = int(row[offsets_indexes[0]])
+        stop = int(row[offsets_indexes[1]])
+        rows.append(Row(row[token_index], row[tag_index], row[docid_index], (start, stop)))
+    yield rows
 
 
 class DocumentPreparer(object):

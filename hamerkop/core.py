@@ -201,6 +201,9 @@ class Document:
         self.docid = self.mentions[0].docid
         self.mention_chains = None
 
+    def __repr__(self):
+        return "Document({}) with {} mentions".format(self.docid, len(self.mentions))
+
 
 class Pipeline:
     """
