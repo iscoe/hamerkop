@@ -11,7 +11,6 @@ class Preprocessor(ABC):
         """
         Process the mentions in a document
         :param document: Document
-        :return: Document
         """
         pass
 
@@ -19,7 +18,7 @@ class Preprocessor(ABC):
 class PassThru(Preprocessor):
     """Does not change the entity mentions"""
     def process(self, document):
-        return document
+        pass
 
 
 class CascadePreprocessor(Preprocessor):
@@ -32,7 +31,4 @@ class CascadePreprocessor(Preprocessor):
 
     def process(self, document):
         for processor in self.processors:
-            document = processor.process(document)
-            if not document:
-                return None
-        return document
+            processor.process(document)

@@ -14,7 +14,6 @@ class CoRef(ABC):
         """
         Process the mentions in a document to create mention chains
         :param document: Document
-        :return: Document
         """
         pass
 
@@ -25,7 +24,6 @@ class UnchainedCoRef(CoRef):
     """
     def coref(self, document):
         document.mention_chains = [MentionChain([mention]) for mention in document.mentions]
-        return document
 
 
 class ExactMatchCoRef(CoRef):
@@ -44,4 +42,3 @@ class ExactMatchCoRef(CoRef):
         for entity_type in chain_data:
             chains = [MentionChain(chain) for chain in chain_data[entity_type].values()]
             document.mention_chains.extend(chains)
-        return document

@@ -9,6 +9,5 @@ class Resolver(ABC):
         """
         Resolve which entity candidate is best from a list of candidates for each mention chain
         :param document: Document with mention chains and candidate sets
-        :return: Document with linked entities
         """
         pass
