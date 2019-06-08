@@ -16,7 +16,7 @@ setup(
     license='Apache License 2.0',
     packages=['hamerkop'],
     install_requires=[
-        'faker', 'langdetect',
+        'langdetect',
     ],
     python_requires='>=3.5',
     keywords=['knowledge base', 'coreference', 'entity linking'],

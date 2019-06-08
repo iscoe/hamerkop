@@ -1,8 +1,5 @@
 from abc import ABC, abstractmethod
-import faker
 import logging
-
-from .core import Entity, EntityOrigin, EntityType
 
 logger = logging.getLogger(__name__)
 
@@ -37,26 +34,6 @@ class NullGenerator(CandidateGenerator):
         return []
 
 
-class MockGenerator(CandidateGenerator):
-    """Create fake candidates to support various kinds of testing"""
-    def __init__(self, num):
-        self.num = num
-        self.faker = faker.Faker()
-
-    def find(self, mention_chain):
-        return [self._create(mention_chain.type) for x in range(self.num)]
-
-    def _create(self, entity_type):
-        if entity_type == EntityType.PER:
-            entity = Entity(self.faker.ssn(), EntityType.PER, self.faker.name(), EntityOrigin.WLL)
-        elif entity_type == EntityType.ORG:
-            entity = Entity(self.faker.ssn(), EntityType.ORG, self.faker.company(), EntityOrigin.APB)
-        else:
-            loc = self.faker.local_latlng(country_code="US", coords_only=False)
-            entity = Entity(self.faker.ssn(), entity_type, loc[2], EntityOrigin.GEO)
-        return entity
-
-
 class IndexBasedGenerator(CandidateGenerator):
     """
     Use a NameIndex to find candidates for entity linking.
@@ -87,7 +64,7 @@ class CombiningGenerator(CandidateGenerator):
         for generator in self.generators:
             for entity in generator.find(mention_chain):
                 candidate_dict[entity.id] = entity
-        logger.debug("{}({}): {} total candidates".format(mention_chain.string,
+        logger.debug("{}({}): {} total candidates".format(mention_chain.best_name,
                                                           mention_chain.type, len(candidate_dict)))
         return list(candidate_dict.values())
 
@@ -113,4 +90,4 @@ class CachingGenerator(CandidateGenerator):
         return candidates
 
     def _gen_key(self, mention_chain):
-        return mention_chain.best_name.string.lower() + ':' + mention_chain.type
+        return mention_chain.best_name.lower() + ':' + mention_chain.type
