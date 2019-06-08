@@ -97,3 +97,29 @@ class BlacklistTest(unittest.TestCase):
         processor.process(document)
         self.assertEqual(2, len(document.mentions))
         self.assertNotIn(mentions[1], document.mentions)
+
+
+class AcronymReplacerTest(unittest.TestCase):
+    def test_case_sensitive(self):
+        processor = AcronymReplacer({'UN': 'United Nations'}, False)
+        mentions = [
+            Mention('UN', 'IL5_doc34', (1, 3), (), EntityType.GPE),
+            Mention('un', 'IL5_doc34', (4, 5), (), EntityType.GPE),
+        ]
+        document = Document(mentions, [])
+        processor.process(document)
+        self.assertEqual(2, len(document.mentions))
+        self.assertEqual('United Nations', document.mentions[0].string)
+        self.assertEqual('un', document.mentions[1].string)
+
+    def test_case_insensitive(self):
+        processor = AcronymReplacer({'UN': 'United Nations'}, True)
+        mentions = [
+            Mention('UN', 'IL5_doc34', (1, 3), (), EntityType.GPE),
+            Mention('un', 'IL5_doc34', (4, 5), (), EntityType.GPE),
+        ]
+        document = Document(mentions, [])
+        processor.process(document)
+        self.assertEqual(2, len(document.mentions))
+        self.assertEqual('United Nations', document.mentions[0].string)
+        self.assertEqual('United Nations', document.mentions[1].string)

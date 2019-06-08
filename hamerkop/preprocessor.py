@@ -3,7 +3,7 @@ import logging
 
 from .core import EntityType
 from .string import String
-from .utilities import CaseInsensitiveSet
+from .utilities import CaseInsensitiveDict, CaseInsensitiveSet
 
 logger = logging.getLogger(__name__)
 
@@ -118,3 +118,23 @@ class Blacklist(Preprocessor):
         document.mentions = [mention for mention in document.mentions if mention.string not in self.data]
         if len(document.mentions) != count:
             logger.debug("{} mentions removed by blacklist".format(count - len(document.mentions)))
+
+
+class AcronymReplacer(Preprocessor):
+    """
+    Uses a map from acronym to entity name
+    """
+    def __init__(self, acronym_map, ci=False):
+        """
+        :param acronym_map: dictionary from acronym -> entity name
+        :param ci: whether to match the acronym ignoring case
+        """
+        if ci:
+            self.map = CaseInsensitiveDict(acronym_map)
+        else:
+            self.map = acronym_map
+
+    def process(self, document):
+        for mention in document.mentions:
+            if mention.string in self.map:
+                mention.string = self.map[mention.string]
