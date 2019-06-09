@@ -1,7 +1,7 @@
 from .candidates import *
 from .core import *
 from .coref import *
-from .input import InputReader, CoNLLReaderException
+from .io import InputReader, CoNLLReaderException, OutputWriter, OutputReader
 from .kb import *
 from .lang import *
 from .output import *
