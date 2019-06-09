@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+import abc
 import enum
 import langdetect
 
@@ -203,8 +203,8 @@ class Lang(enum.Enum):
             return None
 
 
-class LangDetector(ABC):
-    @abstractmethod
+class LangDetector(abc.ABC):
+    @abc.abstractmethod
     def detect(self, filename, tokens):
         """
         Detect language from text
@@ -213,6 +213,15 @@ class LangDetector(ABC):
         :return Lang enum or None
         """
         pass
+
+
+class FixedLang(LangDetector):
+    """Hard coded language"""
+    def __init__(self, lang):
+        self.lang = lang
+
+    def detect(self, filename, tokens):
+        return self.lang
 
 
 class NgramLangDetector(LangDetector):

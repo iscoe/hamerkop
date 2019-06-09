@@ -1,6 +1,3 @@
-import collections
-
-
 class EntityType:
     """LoReHLT entity types"""
     PER = "PER"
@@ -27,6 +24,29 @@ class EntityOrigin:
     WLL = "cia word leaders"
     APB = "cia word fact book orgs"
     AUG = "augmentation"
+
+
+class DocType:
+    SN = 'twitter'
+    WL = 'blog'
+    RF = 'reference'
+    DF = 'discussion forum'
+    NW = 'newswire'
+
+    @classmethod
+    def detect(cls, doc_id):
+        if '_SN_' in doc_id:
+            return cls.SN
+        elif '_WL_' in doc_id:
+            return cls.WL
+        elif '_RF_' in doc_id:
+            return cls.RF
+        elif '_DF_' in doc_id:
+            return cls.DF
+        elif '_NW_' in doc_id:
+            return cls.NW
+        else:
+            raise ValueError("Unknown document type for doc id: {}".format(doc_id))
 
 
 class EntityContext:
@@ -133,6 +153,7 @@ class Mention:
     :tuple token_offsets: Token offsets into the original document
     :string type: Entity type. See EntityType.
     :string original_string: Original mention string from the document
+    :string native_string: Set if string is translated or transliterated
     """
 
     def __init__(self, string, docid, offsets, token_offsets, type, id=None):
@@ -140,6 +161,7 @@ class Mention:
         self.id = id
         self.string = string
         self.original_string = string
+        self.native_string = None
         self.docid = docid
         self.offsets = offsets
         self.token_offsets = token_offsets
@@ -192,14 +214,21 @@ class Document:
     :list mentions: List of entity mentions
     :list tokens: List of tokens
     :string docid: Doc ID of the original document
+    :string type: DocType
     :list mention_chains: List of MentionChain objects
     """
 
-    def __init__(self, mentions, tokens):
+    def __init__(self, mentions, tokens, lang):
         self.mentions = mentions
         self.tokens = tokens
+        self.lang = lang
         self.docid = self.mentions[0].docid
+        self.type = Document.detect_type(self.docid)
         self.mention_chains = None
+
+    @staticmethod
+    def detect_type(doc_id):
+        return DocType.detect(doc_id)
 
     def __repr__(self):
         return "Document({}) with {} mentions".format(self.docid, len(self.mentions))

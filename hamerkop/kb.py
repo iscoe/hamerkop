@@ -1,8 +1,7 @@
-from abc import ABC, abstractmethod
+import abc
 import collections
 import csv
 import logging
-import os
 
 from .core import Entity, EntityType
 from .utilities import CaseInsensitiveDict
@@ -65,14 +64,14 @@ class KBException(Exception):
     """An error occurred when interacting with the KB."""
 
 
-class KB(ABC):
+class KB(abc.ABC):
     """
     Knowledge base interface
     Provides methods for retrieving entities but not searching for them.
     See NameIndex for search methods.
     """
 
-    @abstractmethod
+    @abc.abstractmethod
     def size(self):
         """
         Get the number of entities in the KB
@@ -80,7 +79,7 @@ class KB(ABC):
         """
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def get_entity(self, entity_id):
         """
         Get an entity
@@ -89,7 +88,7 @@ class KB(ABC):
         """
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def get_entities(self, entity_ids):
         """
         Get a list of entities
@@ -99,11 +98,11 @@ class KB(ABC):
         pass
 
 
-class NameIndex(ABC):
+class NameIndex(abc.ABC):
     """
     Find candidates based on a name string
     """
-    @abstractmethod
+    @abc.abstractmethod
     def find(self, name, type, limit=25):
         """
         Find entities that possibly match this name and type pair

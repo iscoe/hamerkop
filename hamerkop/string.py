@@ -1,0 +1,115 @@
+import abc
+import re
+import string
+import sys
+import unicodedata
+
+from .utilities import CaseInsensitiveDict
+
+
+class String:
+    """
+    Collection of string utilities
+    """
+    PUNCT_TABLE = str.maketrans('', '', string.punctuation)
+    PUNCT_SPACE_TABLE = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
+    UNICODE_PUNCT_STR = ''.join([chr(i) for i in range(sys.maxunicode) if unicodedata.category(chr(i)).startswith('P')])
+    UNICODE_PUNCT_TABLE = str.maketrans('', '', UNICODE_PUNCT_STR)
+    UNICODE_PUNCT_SPACE_TABLE = str.maketrans(UNICODE_PUNCT_STR, ' ' * len(UNICODE_PUNCT_STR))
+    EMOJI_REGEX = re.compile(r'['
+                             '\U0001F170-\U0001F19A'  # buttons
+                             '\U0001F200-\U0001F235'  # japanese buttons
+                             '\U0001F300-\U0001F5FF'  # symbols & pictographs
+                             '\U0001F600-\U0001F64F'  # emoticons
+                             '\U0001F680-\U0001F6FF'  # transport & map symbols
+                             '\U0001F1E0-\U0001F1FF'  # flags
+                             '\U0001F900-\U0001F9FF'  # faces added in unicode 8
+                             ']+')
+
+    @classmethod
+    def remove_punct(cls, str):
+        """Removes ASCII punctuation"""
+        return str.translate(cls.PUNCT_TABLE)
+
+    @classmethod
+    def replace_punct(cls, str):
+        """Replaces ASCII punctuation with spaces"""
+        return str.translate(cls.PUNCT_SPACE_TABLE).strip()
+
+    @classmethod
+    def remove_unicode_punct(cls, str):
+        """Removes Unicode punctuation"""
+        return str.translate(cls.UNICODE_PUNCT_TABLE)
+
+    @classmethod
+    def replace_unicode_punct(cls, str):
+        """Replaces Unicode punctuation with spaces"""
+        return str.translate(cls.UNICODE_PUNCT_SPACE_TABLE).strip()
+
+    @classmethod
+    def remove_emojis(cls, str):
+        """Removes emoji characters"""
+        return re.sub(cls.EMOJI_REGEX, '', str)
+
+    @staticmethod
+    def single_space(str):
+        """Replace any sequence of whitespace with a single space"""
+        return re.sub('\s+', ' ', str)
+
+    @staticmethod
+    def remove_double_letter(str):
+        """Remove the second letter of double letters"""
+        return re.sub(r'([a-zA-Z])\1+', r'\1', str)
+
+
+class Translator(abc.ABC):
+    """Transliteration or translation into English"""
+    @abc.abstractmethod
+    def translate(self, string, lang):
+        """
+        Translate or transliterate the string
+
+        Can return None if not translation is available
+        :param string: string to be translated
+        :param lang: Lang code
+        :return: string in latin characters
+        """
+        pass
+
+
+class DictTranslator(Translator):
+    """
+    Use a dictionary of source -> destination translations.
+    Does not do partial translations, only full strings
+    """
+    def __init__(self, trans_map):
+        self.map = CaseInsensitiveDict(trans_map)
+
+    def translate(self, string, lang):
+        if string in self.map:
+            return self.map[string]
+
+
+class Stemmer(abc.ABC):
+    """Produce stem or lemma for a word"""
+    @abc.abstractmethod
+    def stem(self, string, lang):
+        """
+        Stem the input string
+        :param string: string to be stemmed
+        :param lang: Lang code
+        :return: string
+        """
+        pass
+
+
+class DictStemmer(Stemmer):
+    """Use a dictionary of form -> stem"""
+    def __init__(self, stem_map):
+        self.map = CaseInsensitiveDict(stem_map)
+
+    def stem(self, string, lang):
+        if string in self.map:
+            return self.map[string]
+        else:
+            return string

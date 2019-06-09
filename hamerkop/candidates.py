@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
+import abc
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class CandidateGenerator(ABC):
+class CandidateGenerator(abc.ABC):
     """
     A candidate generator finds reasonable candidates for mention chains.
     """
@@ -18,7 +18,7 @@ class CandidateGenerator(ABC):
         for chain in document.mention_chains:
             chain.candidates = self.find(chain)
 
-    @abstractmethod
+    @abc.abstractmethod
     def find(self, mention_chain):
         """
         Find candidates for a mention chain
@@ -26,12 +26,6 @@ class CandidateGenerator(ABC):
         :return: List of candidates
         """
         pass
-
-
-class NullGenerator(CandidateGenerator):
-    """Always returns no candidates"""
-    def find(self, mention_chain):
-        return []
 
 
 class IndexBasedGenerator(CandidateGenerator):
