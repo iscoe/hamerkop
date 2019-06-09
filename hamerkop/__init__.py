@@ -11,6 +11,9 @@ from .io import InputReader, CoNLLReaderException, OutputWriter, OutputReader
 # knowledge base implementations
 from .kb import KB, KBException, MemoryKB, NameIndex, ExactMatchMemoryNameIndex
 
+# string utilities
+from .string import String, Stemmer, DictStemmer, Translator, DictTranslator
+
 # general utilities
 from .utilities import CaseInsensitiveDict, CaseInsensitiveSet, Identifier, InProcessIncremental
 
