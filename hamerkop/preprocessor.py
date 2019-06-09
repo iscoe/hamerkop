@@ -1,5 +1,8 @@
 import abc
+import collections
+import contextlib
 import functools
+import inspect
 import logging
 import re
 
@@ -24,6 +27,100 @@ class Preprocessor(abc.ABC):
         pass
 
 
+def pcm():
+    """Convenience function for Preprocessor Context Manager"""
+    return PreprocessorReporter.get()
+
+
+class ReportProperty(type):
+    """
+    Metaclass that adds a report class property
+
+    Note that implementers must have a get() classmethod
+    """
+    @property
+    def report(cls):
+        return cls.get()._report
+
+
+class PreprocessorReporter(metaclass=ReportProperty):
+    """
+    Reporter for Preprocessor components
+
+    Records:
+    * mention modifications
+    * mention removals
+    """
+    instance = None
+
+    def __init__(self):
+        self._report = {
+            'modifications': collections.Counter(),
+            'removals': collections.Counter(),
+        }
+        self.disable()
+
+    def enable(self):
+        self.modification = self.modification_debug
+        self.removal = self.removal_debug
+
+    def disable(self):
+        self.modification = self.modification_production
+        self.removal = self.removal_production
+
+    @classmethod
+    def get(cls):
+        if cls.instance is None:
+            cls.instance = PreprocessorReporter()
+        return cls.instance
+
+    @classmethod
+    def activate(cls):
+        cls.get().enable()
+
+    @classmethod
+    def deactivate(cls):
+        cls.get().disable()
+
+    @contextlib.contextmanager
+    def modification(self, mention):
+        yield
+
+    @contextlib.contextmanager
+    def modification_production(self, mention):
+        yield
+
+    @contextlib.contextmanager
+    def modification_debug(self, mention):
+        caller = self.get_caller()
+        original = mention.string
+        yield
+        if original != mention.string:
+            self._report['modifications'].update({caller: 1})
+
+    @contextlib.contextmanager
+    def removal(self, document):
+        yield
+
+    @contextlib.contextmanager
+    def removal_production(self, document):
+        yield
+
+    @contextlib.contextmanager
+    def removal_debug(self, document):
+        caller = self.get_caller()
+        original_size = len(document.mentions)
+        yield
+        if original_size != len(document.mentions):
+            num = original_size - len(document.mentions)
+            self._report['removals'].update({caller: num})
+
+    @staticmethod
+    def get_caller():
+        # 1=self, 2=contextlib, 3=caller
+        return inspect.stack()[3][0].f_locals['self'].__class__.__name__
+
+
 class PassThru(Preprocessor):
     """Does not change the entity mentions"""
     def process(self, document):
@@ -46,10 +143,11 @@ class CascadePreprocessor(Preprocessor):
 class TypeValidator(Preprocessor):
     """Removes mentions that have unknown types"""
     def process(self, document):
-        original_size = len(document.mentions)
-        document.mentions = [mention for mention in document.mentions if mention.type in EntityType.TYPES]
-        if len(document.mentions) != original_size:
-            logger.error("Document {} has an invalid type".format(document.docid))
+        with pcm().removal(document):
+            original_size = len(document.mentions)
+            document.mentions = [mention for mention in document.mentions if mention.type in EntityType.TYPES]
+            if len(document.mentions) != original_size:
+                logger.error("Document {} has an invalid type".format(document.docid))
 
 
 class TextNormalizer(Preprocessor):
@@ -63,8 +161,9 @@ class TextNormalizer(Preprocessor):
 
     def process(self, document):
         for mention in document.mentions:
-            mention.string = mention.string.translate(self.trans_table)
-            mention.string = String.remove_emojis(mention.string)
+            with pcm().modification(mention):
+                mention.string = mention.string.translate(self.trans_table)
+                mention.string = String.remove_emojis(mention.string)
 
 
 class GarbageRemover(Preprocessor):
@@ -74,10 +173,11 @@ class GarbageRemover(Preprocessor):
     * empty mention strings (can be caused by other preprocessors)
     """
     def process(self, document):
-        document.mentions = [mention for mention in document.mentions if 'www.' not in mention.string]
-        document.mentions = [mention for mention in document.mentions if 'http:' not in mention.string]
-        document.mentions = [mention for mention in document.mentions if 'https:' not in mention.string]
-        document.mentions = [mention for mention in document.mentions if mention.string]
+        with pcm().removal(document):
+            document.mentions = [mention for mention in document.mentions if 'www.' not in mention.string]
+            document.mentions = [mention for mention in document.mentions if 'http:' not in mention.string]
+            document.mentions = [mention for mention in document.mentions if 'https:' not in mention.string]
+            document.mentions = [mention for mention in document.mentions if mention.string]
 
 
 class FixType(Preprocessor):
@@ -100,7 +200,8 @@ class TooLongMentionRemover(Preprocessor):
         self.max_tokens = max_tokens
 
     def process(self, document):
-        document.mentions = [mention for mention in document.mentions if self._check(mention)]
+        with pcm().removal(document):
+            document.mentions = [mention for mention in document.mentions if self._check(mention)]
 
     def _check(self, mention):
         """Check if the mention passes the token length test"""
@@ -116,10 +217,8 @@ class Blacklist(Preprocessor):
         self.data = CaseInsensitiveSet(blacklist)
 
     def process(self, document):
-        count = len(document.mentions)
-        document.mentions = [mention for mention in document.mentions if mention.string not in self.data]
-        if len(document.mentions) != count:
-            logger.debug("{} mentions removed by blacklist".format(count - len(document.mentions)))
+        with pcm().removal(document):
+            document.mentions = [mention for mention in document.mentions if mention.string not in self.data]
 
 
 class AcronymReplacer(Preprocessor):
@@ -138,8 +237,9 @@ class AcronymReplacer(Preprocessor):
 
     def process(self, document):
         for mention in document.mentions:
-            if mention.string in self.map:
-                mention.string = self.map[mention.string]
+            with pcm().modification(mention):
+                if mention.string in self.map:
+                    mention.string = self.map[mention.string]
 
 
 class NameTranslator(Preprocessor):
@@ -157,10 +257,11 @@ class NameTranslator(Preprocessor):
 
     def process(self, document):
         for mention in document.mentions:
-            translation = self.translator.translate(mention.string, document.lang)
-            if translation and translation != mention.string:
-                mention.native_string = mention.string
-                mention.string = translation
+            with pcm().modification(mention):
+                translation = self.translator.translate(mention.string, document.lang)
+                if translation and translation != mention.string:
+                    mention.native_string = mention.string
+                    mention.string = translation
 
 
 class NameStemmer(Preprocessor):
@@ -176,9 +277,10 @@ class NameStemmer(Preprocessor):
 
     def process(self, document):
         for mention in document.mentions:
-            words = mention.string.split()
-            words = list(map(functools.partial(self.stemmer.stem, lang=document.lang), words))
-            mention.string = ' '.join(words)
+            with pcm().modification(mention):
+                words = mention.string.split()
+                words = list(map(functools.partial(self.stemmer.stem, lang=document.lang), words))
+                mention.string = ' '.join(words)
 
 
 class TwitterUsernameReplacer(Preprocessor):
@@ -197,14 +299,15 @@ class TwitterUsernameReplacer(Preprocessor):
         if document.type != DocType.SN:
             return
         for mention in document.mentions:
-            if mention.string and mention.string[0] == '@':
-                s = mention.string[1:]
-                s = String.remove_emojis(s)
-                # chop punctuation off end of username
-                if s and not (s[-1].isalpha() or s[-1].isdigit() or s[-1] == '_'):
-                    s = s[:-1]
-                if s in self.map:
-                    mention.string = self.map[s]
+            with pcm().modification(mention):
+                if mention.string and mention.string[0] == '@':
+                    s = mention.string[1:]
+                    s = String.remove_emojis(s)
+                    # chop punctuation off end of username
+                    if s and not (s[-1].isalpha() or s[-1].isdigit() or s[-1] == '_'):
+                        s = s[:-1]
+                    if s in self.map:
+                        mention.string = self.map[s]
 
 
 class TwitterHashtagProcessor(Preprocessor):
@@ -218,12 +321,13 @@ class TwitterHashtagProcessor(Preprocessor):
 
     def process(self, document):
         for mention in document.mentions:
-            if mention.string and mention.string[0] == '#':
-                mention.string = mention.string[1:]
-                matches = re.findall(self.hashtag_regex, mention.string)
-                if matches:
-                    matches = [match for match in matches if match]
-                    s = ' '.join(matches)
-                    # TODO find a better approach for bad strings - like removing the mention
-                    if s:
-                        mention.string = s
+            with pcm().modification(mention):
+                if mention.string and mention.string[0] == '#':
+                    mention.string = mention.string[1:]
+                    matches = re.findall(self.hashtag_regex, mention.string)
+                    if matches:
+                        matches = [match for match in matches if match]
+                        s = ' '.join(matches)
+                        # TODO find a better approach for bad strings - like removing the mention
+                        if s:
+                            mention.string = s

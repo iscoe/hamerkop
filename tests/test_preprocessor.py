@@ -5,6 +5,42 @@ from hamerkop.lang import Lang
 from hamerkop.string import DictStemmer, DictTranslator
 
 
+class PreprocessorReporterTest(unittest.TestCase):
+    class Preprocessor(Preprocessor):
+        def process(self, document):
+            with pcm().removal(document):
+                del document.mentions[1]
+            for mention in document.mentions:
+                with pcm().modification(mention):
+                    mention.string = mention.string + 'test'
+
+    def test_activate(self):
+        PreprocessorReporter.activate()
+        self.run_preprocessor()
+        self.assertEqual(1, len(PreprocessorReporter.report['modifications']))
+        self.assertEqual(3, list(PreprocessorReporter.report['modifications'].values())[0])
+        self.assertEqual(1, len(PreprocessorReporter.report['removals']))
+
+    def test_deactivate(self):
+        PreprocessorReporter.report['modifications'].clear()
+        PreprocessorReporter.report['removals'].clear()
+        PreprocessorReporter.deactivate()
+        self.run_preprocessor()
+        self.assertEqual(0, len(PreprocessorReporter.report['modifications']))
+        self.assertEqual(0, len(PreprocessorReporter.report['removals']))
+
+    def run_preprocessor(self):
+        processor = PreprocessorReporterTest.Preprocessor()
+        mentions = [
+            Mention('Henry Adams', '_NW_doc34', (1, 3), (), EntityType.PER),
+            Mention('Bulgaria', '_NW_doc34', (1, 3), (), EntityType.PER),
+            Mention('Leo Tolstoy', '_NW_doc34', (1, 3), (), EntityType.PER),
+            Mention('Leo Tolstoy writes long novels', '_NW_doc34', (1, 3), (), EntityType.PER)
+        ]
+        document = Document(mentions, [], Lang.EN)
+        processor.process(document)
+
+
 class CascadePreprocessorTest(unittest.TestCase):
     def test(self):
         processors = [Blacklist(['bulgaria', 'africa']), TooLongMentionRemover(4)]
