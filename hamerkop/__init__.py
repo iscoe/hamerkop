@@ -1,3 +1,5 @@
+__version__ = '0.1.dev'
+
 # core classes and data structures
 from .core import Document, DocType, Entity, EntityContext, EntityOrigin, EntityType, Mention, MentionChain, \
     Pipeline

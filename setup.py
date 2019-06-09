@@ -1,8 +1,11 @@
+import re
 from setuptools import setup
 
 __author__ = 'Cash Costello'
 __email__ = 'cash.costello@jhuapl.edu'
-__version__ = '0.1.0.dev'
+
+with open('hamerkop/__init__.py', 'r') as fp:
+    __version__ = re.search(r"__version__ = \'(.*?)\'", fp.read()).group(1)
 
 setup(
     name='hamerkop',
