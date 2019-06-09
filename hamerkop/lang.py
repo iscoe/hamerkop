@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+import abc
 import enum
 import langdetect
 
@@ -203,8 +203,8 @@ class Lang(enum.Enum):
             return None
 
 
-class LangDetector(ABC):
-    @abstractmethod
+class LangDetector(abc.ABC):
+    @abc.abstractmethod
     def detect(self, filename, tokens):
         """
         Detect language from text

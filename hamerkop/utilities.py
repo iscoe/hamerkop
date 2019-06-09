@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+import abc
 import collections
 
 
@@ -67,9 +67,9 @@ class CaseInsensitiveDict(collections.MutableMapping):
         return '%s(%r)' % (self.__class__.__name__, self._store)
 
 
-class Identifier(ABC):
+class Identifier(abc.ABC):
     """Create unique identifiers"""
-    @abstractmethod
+    @abc.abstractmethod
     def assign(self, mention):
         """
         Assign an identifier to a mention

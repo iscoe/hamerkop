@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+import abc
 import functools
 import logging
 import re
@@ -10,12 +10,12 @@ from .utilities import CaseInsensitiveDict, CaseInsensitiveSet
 logger = logging.getLogger(__name__)
 
 
-class Preprocessor(ABC):
+class Preprocessor(abc.ABC):
     """
     A preprocessor runs before coref and candidate generation to filter and clean the mentions.
     """
 
-    @abstractmethod
+    @abc.abstractmethod
     def process(self, document):
         """
         Process the mentions in a document

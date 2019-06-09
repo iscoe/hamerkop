@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+import abc
 import re
 import string
 import sys
@@ -62,9 +62,9 @@ class String:
         return re.sub(r'([a-zA-Z])\1+', r'\1', str)
 
 
-class Translator(ABC):
+class Translator(abc.ABC):
     """Transliteration or translation into English"""
-    @abstractmethod
+    @abc.abstractmethod
     def translate(self, string, lang):
         """
         Translate or transliterate the string
@@ -90,9 +90,9 @@ class DictTranslator(Translator):
             return self.map[string]
 
 
-class Stemmer(ABC):
+class Stemmer(abc.ABC):
     """Produce stem or lemma for a word"""
-    @abstractmethod
+    @abc.abstractmethod
     def stem(self, string, lang):
         """
         Stem the input string

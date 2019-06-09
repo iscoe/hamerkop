@@ -1,15 +1,15 @@
-from abc import ABC, abstractmethod
+import abc
 
 from .core import EntityType, MentionChain
 from .utilities import CaseInsensitiveDict
 
 
-class CoRef(ABC):
+class CoRef(abc.ABC):
     """
     Indoc Coreference to create mention chains
     """
 
-    @abstractmethod
+    @abc.abstractmethod
     def coref(self, document):
         """
         Process the mentions in a document to create mention chains

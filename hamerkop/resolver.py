@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
+import abc
 
 
-class Resolver(ABC):
+class Resolver(abc.ABC):
     """Resolve links between mention chains and kb entities"""
 
-    @abstractmethod
+    @abc.abstractmethod
     def resolve(self, document):
         """
         Resolve which entity candidate is best from a list of candidates for each mention chain
