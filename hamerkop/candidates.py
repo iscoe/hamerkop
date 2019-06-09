@@ -28,12 +28,6 @@ class CandidateGenerator(abc.ABC):
         pass
 
 
-class NullGenerator(CandidateGenerator):
-    """Always returns no candidates"""
-    def find(self, mention_chain):
-        return []
-
-
 class IndexBasedGenerator(CandidateGenerator):
     """
     Use a NameIndex to find candidates for entity linking.

@@ -1,10 +1,29 @@
-from .candidates import *
-from .core import *
-from .coref import *
+# core classes and data structures
+from .core import Document, DocType, Entity, EntityContext, EntityOrigin, EntityType, Mention, MentionChain, \
+    Pipeline
+
+# language detection
+from .lang import Lang, LangDetector, FixedLang, NgramLangDetector
+
+# input and output file reading and writing
 from .io import InputReader, CoNLLReaderException, OutputWriter, OutputReader
-from .kb import *
-from .lang import *
-from .output import *
-from .preprocessor import *
-from .resolver import *
-from .utilities import InProcessIncremental
+
+# knowledge base implementations
+from .kb import KB, KBException, MemoryKB, NameIndex, ExactMatchMemoryNameIndex
+
+# general utilities
+from .utilities import CaseInsensitiveDict, CaseInsensitiveSet, Identifier, InProcessIncremental
+
+# 1st stage: preprocessing mentions
+from .preprocessor import Preprocessor, PreprocessorReporter, CascadePreprocessor, PassThru, FixType, TypeValidator, \
+    TwitterHashtagProcessor, TwitterUsernameReplacer, TextNormalizer, GarbageRemover, TooLongMentionRemover, \
+    Blacklist, NameTranslator, NameStemmer, AcronymReplacer
+
+# 2nd stage: in document coreference
+from .coref import CoRef, UnchainedCoRef, ExactMatchCoRef
+
+# 3rd stage: candidate generation
+from .candidates import CandidateGenerator, IndexBasedGenerator, CombiningGenerator, CachingGenerator
+
+# 4th stage: entity resolution
+from .resolver import Resolver
