@@ -88,3 +88,28 @@ class DictTranslator(Translator):
     def translate(self, string, lang):
         if string in self.map:
             return self.map[string]
+
+
+class Stemmer(ABC):
+    """Produce stem or lemma for a word"""
+    @abstractmethod
+    def stem(self, string, lang):
+        """
+        Stem the input string
+        :param string: string to be stemmed
+        :param lang: Lang code
+        :return: string
+        """
+        pass
+
+
+class DictStemmer(Stemmer):
+    """Use a dictionary of form -> stem"""
+    def __init__(self, stem_map):
+        self.map = CaseInsensitiveDict(stem_map)
+
+    def stem(self, string, lang):
+        if string in self.map:
+            return self.map[string]
+        else:
+            return string

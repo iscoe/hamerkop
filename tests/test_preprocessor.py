@@ -2,7 +2,7 @@ import unittest
 from hamerkop.preprocessor import *
 from hamerkop.core import Document, Mention
 from hamerkop.lang import Lang
-from hamerkop.string import DictTranslator
+from hamerkop.string import DictStemmer, DictTranslator
 
 
 class CascadePreprocessorTest(unittest.TestCase):
@@ -140,3 +140,17 @@ class NameTranslatorTest(unittest.TestCase):
         self.assertEqual('Lake Constance', mentions[0].string)
         self.assertEqual('Bodensee', mentions[0].native_string)
         self.assertIsNone(mentions[1].native_string)
+
+
+class NameStemmerTest(unittest.TestCase):
+    def test(self):
+        stemmer = DictStemmer({'kölner': 'köln'})
+        processor = NameStemmer(stemmer)
+        mentions = [
+            Mention('Kölner Dom', 'doc34', (1, 3), (), EntityType.LOC),
+            Mention('Rheinenergiestadion', 'doc34', (1, 3), (), EntityType.LOC),
+        ]
+        document = Document(mentions, [], Lang.DE)
+        processor.process(document)
+        self.assertEqual('köln Dom', mentions[0].string)
+        self.assertEqual('Rheinenergiestadion', mentions[1].string)

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import functools
 import logging
 
 from .core import EntityType
@@ -159,3 +160,21 @@ class NameTranslator(Preprocessor):
             if translation and translation != mention.string:
                 mention.native_string = mention.string
                 mention.string = translation
+
+
+class NameStemmer(Preprocessor):
+    """
+    Replaces tokens of name string with stems.
+    TODO: does not handle punctuation (dashes, apostrophes, parentheses)
+    """
+    def __init__(self, stemmer):
+        """
+        :param stemmer: Stemmer object
+        """
+        self.stemmer = stemmer
+
+    def process(self, document):
+        for mention in document.mentions:
+            words = mention.string.split()
+            words = list(map(functools.partial(self.stemmer.stem, lang=document.lang), words))
+            mention.string = ' '.join(words)
