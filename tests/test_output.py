@@ -14,11 +14,11 @@ class OutputWriterTest(unittest.TestCase):
     def test(self):
         chains = [
             MentionChain([
-                Mention('Henry', 'doc34', (123, 128), (17, 17), EntityType.PER, 'Men1')
+                Mention('Henry', '_WL_doc34', (123, 128), (17, 17), EntityType.PER, 'Men1')
             ]),
             MentionChain([
-                Mention('Ed Smith', 'doc34', (141, 149), (22, 23), EntityType.PER, 'Men2'),
-                Mention('Ed', 'doc34', (197, 199), (44, 44), EntityType.PER, 'Men3')
+                Mention('Ed Smith', '_WL_doc34', (141, 149), (22, 23), EntityType.PER, 'Men2'),
+                Mention('Ed', '_WL_doc34', (197, 199), (44, 44), EntityType.PER, 'Men3')
             ])
         ]
         chains[0].entity = Entity('67', EntityType.PER, 'Henry', EntityOrigin.WLL)
@@ -32,7 +32,7 @@ class OutputWriterTest(unittest.TestCase):
 
         buffer.seek(0)
         lines = buffer.readlines()
-        line1 = "test\tMen1\tHenry\tdoc34:123-128\t67\tPER\tNAM\t0.75"
+        line1 = "test\tMen1\tHenry\t_WL_doc34:123-128\t67\tPER\tNAM\t0.75"
         self.assertEqual(line1, lines[0].strip())
 
 

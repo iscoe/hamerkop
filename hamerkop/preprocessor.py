@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 import functools
 import logging
+import re
 
-from .core import EntityType
+from .core import DocType, EntityType
 from .string import String
 from .utilities import CaseInsensitiveDict, CaseInsensitiveSet
 
@@ -178,3 +179,51 @@ class NameStemmer(Preprocessor):
             words = mention.string.split()
             words = list(map(functools.partial(self.stemmer.stem, lang=document.lang), words))
             mention.string = ' '.join(words)
+
+
+class TwitterUsernameReplacer(Preprocessor):
+    """
+    Replaces twitter @username with screen name
+    The @username is still available as original_string on the mention.
+    The username map is username -> screen name
+    For example: nytimes   New York Times
+    """
+    # TODO case sensitive and not handling multi-token phrase with username in it
+    def __init__(self, username_map):
+        self.map = username_map
+
+    def process(self, document):
+        # only process tweets
+        if document.type != DocType.SN:
+            return
+        for mention in document.mentions:
+            if mention.string and mention.string[0] == '@':
+                s = mention.string[1:]
+                s = String.remove_emojis(s)
+                # chop punctuation off end of username
+                if s and not (s[-1].isalpha() or s[-1].isdigit() or s[-1] == '_'):
+                    s = s[:-1]
+                if s in self.map:
+                    mention.string = self.map[s]
+
+
+class TwitterHashtagProcessor(Preprocessor):
+    """
+    Replaces twitter #HashTag as Hash Tag
+    The #HashTag is still available as original_string on the mention.
+    """
+    def __init__(self):
+        # TODO this does not handle numbers and leaves behind empty matches
+        self.hashtag_regex = re.compile('[A-Z]*[a-z]*')
+
+    def process(self, document):
+        for mention in document.mentions:
+            if mention.string and mention.string[0] == '#':
+                mention.string = mention.string[1:]
+                matches = re.findall(self.hashtag_regex, mention.string)
+                if matches:
+                    matches = [match for match in matches if match]
+                    s = ' '.join(matches)
+                    # TODO find a better approach for bad strings - like removing the mention
+                    if s:
+                        mention.string = s
