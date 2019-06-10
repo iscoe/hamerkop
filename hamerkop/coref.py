@@ -1,7 +1,9 @@
 import abc
+import collections
 import logging
 
 from .core import EntityType, MentionChain
+from .io import LinkType
 from .utilities import CaseInsensitiveDict
 
 logger = logging.getLogger(__name__)
@@ -20,6 +22,125 @@ class CoRef(abc.ABC):
         :param document: Document
         """
         pass
+
+
+class CoRefScorer:
+    """
+    Measure the performance of a CoRef system
+    """
+    def __init__(self, gt):
+        """
+        :param gt: output of OutputReader
+        """
+        self.gt_clusters, self.gt_mention_map = self._prepare_gt(gt)
+        self.precision_numerator = 0
+        self.precision_denominator = 0
+        self.recall_numerator = 0
+        self.recall_denominator = 0
+
+    def update(self, document):
+        """
+        Update performance metrics with the mention chains from this document
+        :param document: Document with mention chains
+        """
+        # prepare clusters and mention map
+        predicted_clusters = []
+        for chain in document.mention_chains:
+            predicted_clusters.append([self._create_mention_id(m.offsets) for m in chain.mentions])
+        predicted_mention_map = self._create_mention_map(predicted_clusters)
+
+        self._update_metrics(document.docid, predicted_clusters, predicted_mention_map)
+
+    def _update_metrics(self, doc_id, predicted_clusters, predicted_mention_map):
+        p_num, p_den = self.muc(predicted_clusters, self.gt_mention_map[doc_id])
+        r_num, r_den = self.muc(self.gt_clusters[doc_id], predicted_mention_map)
+        self.precision_numerator += p_num
+        self.precision_denominator += p_den
+        self.recall_numerator += r_num
+        self.recall_denominator += r_den
+
+    @property
+    def precision(self):
+        if self.precision_numerator == 0:
+            return 0
+        else:
+            return self.precision_numerator / self.precision_denominator
+
+    @property
+    def recall(self):
+        if self.recall_numerator == 0:
+            return 0
+        else:
+            return self.recall_numerator / self.recall_denominator
+
+    @property
+    def f1(self):
+        if self.precision + self.recall == 0:
+            return 0
+        return 2 * self.precision * self.recall / (self.precision + self.recall)
+
+    @staticmethod
+    def muc(clusters, mention_map):
+        tp = p = 0
+        for c in clusters:
+            p += len(c) - 1
+            tp += len(c)
+            linked = set()
+            for m in c:
+                if m in mention_map:
+                    linked.add(mention_map[m])
+                else:
+                    tp -= 1
+            tp -= len(linked)
+            print(tp)
+        return tp, p
+
+    @classmethod
+    def _prepare_gt(cls, gt):
+        """
+        Takes in doc_id -> offsets -> list of links (see OutputReader)
+        Creates two dictionaries:
+           doc_id -> list of mention ID clusters
+           doc_id -> mention ID -> cluster ID
+        """
+        # create lists of mentions for each cluster in a document
+        gt_clusters = {}
+        for doc in gt:
+            gt_clusters[doc] = []
+            clusters = collections.defaultdict(list)
+            for offsets in gt[doc]:
+                cluster_id = cls._create_cluster_id(gt[doc][offsets])
+                clusters[cluster_id].append(cls._create_mention_id(offsets))
+            gt_clusters[doc] = list(clusters.values())
+
+        # creates mapping from mention ID to cluster ID
+        gt_mention_map = {}
+        for doc in gt_clusters:
+            gt_mention_map[doc] = cls._create_mention_map(gt_clusters[doc])
+
+        return gt_clusters, gt_mention_map
+
+    @staticmethod
+    def _create_mention_id(offsets):
+        return 'm-' + str(offsets[0]) + '-' + str(offsets[1])
+
+    @staticmethod
+    def _create_cluster_id(link):
+        if link.link_type == LinkType.NIL:
+            return link.cluster
+        else:
+            return '|'.join(link.links)
+
+    @staticmethod
+    def _create_mention_map(clusters):
+        cluster_counter = 0
+        mention_map = {}
+        for cluster in clusters:
+            cluster_counter += 1
+            cluster_id = 'C' + str(cluster_counter)
+            for mention_id in cluster:
+                mention_map[mention_id] = cluster_id
+        return mention_map
 
 
 class CoRefUpdate(abc.ABC):

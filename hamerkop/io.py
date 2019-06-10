@@ -179,7 +179,7 @@ class OutputWriter:
 
 
 # link from a ground truth file
-Link = collections.namedtuple('Link', 'entity_type link_type links')
+Link = collections.namedtuple('Link', 'entity_type link_type links cluster')
 
 
 class LinkType:
@@ -209,7 +209,10 @@ class OutputReader:
             offsets = tuple(map(int, offset_strings))
             link_type = 'NIL' not in row[EvalTabFormat.KB_ID]
             links = []
+            cluster = None
             if link_type == LinkType.LINK:
                 links = row[EvalTabFormat.KB_ID].split('|')
-            data[doc_id][offsets] = Link(row[EvalTabFormat.ENTITY_TYPE], link_type, links)
+            else:
+                cluster = row[EvalTabFormat.KB_ID]
+            data[doc_id][offsets] = Link(row[EvalTabFormat.ENTITY_TYPE], link_type, links, cluster)
         return data
