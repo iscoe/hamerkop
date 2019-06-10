@@ -47,7 +47,7 @@ with open(entities_fn, 'r') as efp, open(names_fn, 'r') as nfp:
 
 # construct pipeline components
 pre = hamerkop.PassThru()
-coref = hamerkop.ExactMatchCoRef()
+coref = hamerkop.ExactMatchCoref()
 cand = hamerkop.IndexBasedGenerator(10, index)
 resolver = hamerkop.BestMatchResolver()
 

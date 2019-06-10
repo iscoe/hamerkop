@@ -25,7 +25,7 @@ from .preprocessor import Preprocessor, PreprocessorReporter, CascadePreprocesso
     Blacklist, NameTranslator, NameStemmer, AcronymReplacer
 
 # 2nd stage: in document coreference
-from .coref import CoRef, UnchainedCoRef, ExactMatchCoRef
+from .coref import Coref, UnchainedCoref, ExactMatchCoref
 
 # 3rd stage: candidate generation
 from .candidates import CandidateGenerator, IndexBasedGenerator, CombiningGenerator, CachingGenerator
