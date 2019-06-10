@@ -149,8 +149,8 @@ class Mention:
     :string id: Unique mention id
     :string string: Mention string (maybe be normalized)
     :string docid: Document id
-    :tuple offsets: Character offsets into the original document
-    :tuple token_offsets: Token offsets into the original document
+    :tuple offsets: Character offsets into the original document (1-based index, inclusive)
+    :tuple token_offsets: Token offsets into the original document (0-based index, exclusive)
     :string type: Entity type. See EntityType.
     :string original_string: Original mention string from the document
     :string native_string: Set if string is translated or transliterated
