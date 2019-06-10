@@ -9,7 +9,7 @@ from .utilities import CaseInsensitiveDict
 logger = logging.getLogger(__name__)
 
 
-class CoRef(abc.ABC):
+class Coref(abc.ABC):
     """
     Within Document Coreference
 
@@ -24,9 +24,9 @@ class CoRef(abc.ABC):
         pass
 
 
-class CoRefScorer:
+class CorefScorer:
     """
-    Measure the performance of a CoRef system
+    Measure the performance of a Coref system
     """
     def __init__(self, gt):
         """
@@ -143,7 +143,7 @@ class CoRefScorer:
         return mention_map
 
 
-class CoRefUpdate(abc.ABC):
+class CorefUpdate(abc.ABC):
     """
     Update the current mention chains (split or merge)
     """
@@ -163,9 +163,9 @@ class CoRefUpdate(abc.ABC):
         return chains
 
 
-class TwoStageCoRef(CoRef):
+class TwoStageCoref(Coref):
     """
-    Create mention chains with a CoRef component and then update with one or more CoRefUpdate components
+    Create mention chains with a Coref component and then update with one or more CorefUpdate components
     """
     def __init__(self, coref, updaters):
         self._coref = coref
@@ -177,7 +177,7 @@ class TwoStageCoRef(CoRef):
             updater.update(document)
 
 
-class UnchainedCoRef(CoRef):
+class UnchainedCoref(Coref):
     """
     Each mention gets its own chain
     """
@@ -185,7 +185,7 @@ class UnchainedCoRef(CoRef):
         document.mention_chains = [MentionChain([mention]) for mention in document.mentions]
 
 
-class ExactMatchCoRef(CoRef):
+class ExactMatchCoref(Coref):
     """
     Mentions strings that are exact matches are chained (case not considered)
     """
@@ -203,7 +203,7 @@ class ExactMatchCoRef(CoRef):
             document.mention_chains.extend(chains)
 
 
-class CoRefAcronymUpdate(CoRefUpdate):
+class CorefAcronymUpdate(CorefUpdate):
     """
     Finds best match for names that look like acronyms
 
