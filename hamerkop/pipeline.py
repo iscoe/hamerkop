@@ -1,3 +1,4 @@
+from .candidates import CandidatesScorer
 from .coref import CorefScorer
 from .preprocessor import PreprocessorReporter
 from .utilities import NotATimer, Timer
@@ -24,6 +25,8 @@ class Report:
         self.time_report = TimeReport()
         self.preprocessor_report = None
         self.coref_report = None
+        self.candidates_report = None
+        self.resolver_report = None
 
 
 class Pipeline:
@@ -55,6 +58,7 @@ class Pipeline:
         self._scoring = False
         self._ground_truth = None
         self._coref_scorer = None
+        self._candidates_scorer = None
 
     def enable_profiling(self):
         self._profiling = True
@@ -65,6 +69,7 @@ class Pipeline:
         self._ground_truth = ground_truth
         PreprocessorReporter.activate()
         self._coref_scorer = CorefScorer(self._ground_truth)
+        self._candidates_scorer = CandidatesScorer(self._ground_truth)
 
     def enable_progress(self, expected_number=0, period=100):
         self._progress = True
@@ -88,6 +93,8 @@ class Pipeline:
                 # candidate generation
                 with self.report.time_report.candidates:
                     self.candidate_gen.process(doc)
+                if self._scoring:
+                    self._candidates_scorer.update(doc)
 
                 # resolution
                 with self.report.time_report.resolver:
