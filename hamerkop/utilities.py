@@ -1,5 +1,6 @@
 import abc
 import collections
+import timeit
 
 
 class CaseInsensitiveSet(collections.MutableSet):
@@ -88,3 +89,27 @@ class InProcessIncremental(Identifier):
         mention.id = "M{}".format(self.count)
         self.count += 1
         return mention
+
+
+class Timer:
+    def __init__(self, name=None):
+        self.name = name
+        self.time = 0
+
+    def __enter__(self):
+        self.start = timeit.default_timer()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.time += timeit.default_timer() - self.start
+
+
+class NotATimer:
+    def __init__(self, name=None):
+        self.name = name
+        self.time = 0
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
