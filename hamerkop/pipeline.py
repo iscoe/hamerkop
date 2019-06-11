@@ -31,7 +31,9 @@ class Pipeline:
         self.report = Report()
 
         self.profiling = False
-        self.progress = False
+        self._progress = False
+        self._expected_num_docs = 0
+        self._progress_period = 0
         self._scoring = False
         self.ground_truth = None
         self.coref_scorer = None
@@ -42,7 +44,13 @@ class Pipeline:
         PreprocessorReporter.activate()
         self.coref_scorer = CorefScorer(self.ground_truth)
 
+    def enable_progress(self, expected_number=0, period=100):
+        self._progress = True
+        self._expected_num_docs = expected_number
+        self._progress_period = period
+
     def run(self):
+        document_count = 0
         for doc in self.documents:
             self.preprocessor.process(doc)
             self.coref.coref(doc)
@@ -51,6 +59,16 @@ class Pipeline:
             self.candidate_gen.process(doc)
             self.resolver.resolve(doc)
             self.writer.write(doc)
+            document_count += 1
+            if self._progress and document_count % self._progress_period == 0:
+                if self._expected_num_docs:
+                    m = ' {0: <5} {1: >3}%'.format(document_count, int(100 * document_count / self._expected_num_docs))
+                    print(m, end='\r')
+                else:
+                    print(' {0: <5}'.format(document_count), end='\r')
+
+        if self._progress:
+            print('Processed {} documents'.format(document_count))
 
         if self._scoring:
             self.report.preprocessor_report = PreprocessorReporter.report
