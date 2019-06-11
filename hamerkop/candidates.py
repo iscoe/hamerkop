@@ -42,7 +42,7 @@ class IndexBasedGenerator(CandidateGenerator):
         name = mention_chain.name
         candidates = self.index.find(name, mention_chain.type, self.max)
         logger.debug("{}({}): {} candidates from {}".format(
-            name, mention_chain.type, len(mention_chain.candidates), type(self.index).__name__))
+            name, mention_chain.type, len(candidates), type(self.index).__name__))
         return candidates
 
 

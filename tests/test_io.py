@@ -93,6 +93,13 @@ class InputReaderTest(unittest.TestCase):
             docs = list(reader)
             self.assertEqual(2, len(docs))
 
+    def test_with_no_tags(self):
+        filename = get_filename('data/conll/conll_reader_test_no_header_no_tags')
+        with open(filename, 'r') as fp:
+            reader = InputReader(fp)
+            docs = list(reader)
+            self.assertEqual(0, len(docs))
+
 
 class OutputWriterTest(unittest.TestCase):
     def test(self):
