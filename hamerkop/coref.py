@@ -24,15 +24,26 @@ class Coref(abc.ABC):
         pass
 
 
+class CorefMetric:
+    MUC = 'muc'
+    B3 = 'b3'
+
+
 class CorefScorer:
     """
     Measure the performance of a Coref system
     """
-    def __init__(self, gt):
+    def __init__(self, gt, metric=CorefMetric.B3):
         """
         :param gt: output of OutputReader
         """
         self.gt_clusters, self.gt_mention_map = self._prepare_gt(gt)
+        if metric == CorefMetric.MUC:
+            self.metric = self.muc
+        elif metric == CorefMetric.B3:
+            self.metric = self.b3
+        else:
+            raise ValueError("Unknown metric: {}".format(metric))
         self.precision_numerator = 0
         self.precision_denominator = 0
         self.recall_numerator = 0
@@ -52,8 +63,8 @@ class CorefScorer:
         self._update_metrics(document.docid, predicted_clusters, predicted_mention_map)
 
     def _update_metrics(self, doc_id, predicted_clusters, predicted_mention_map):
-        p_num, p_den = self.muc(predicted_clusters, self.gt_mention_map[doc_id])
-        r_num, r_den = self.muc(self.gt_clusters[doc_id], predicted_mention_map)
+        p_num, p_den = self.metric(predicted_clusters, self.gt_mention_map[doc_id])
+        r_num, r_den = self.metric(self.gt_clusters[doc_id], predicted_mention_map)
         self.precision_numerator += p_num
         self.precision_denominator += p_den
         self.recall_numerator += r_num
@@ -94,6 +105,24 @@ class CorefScorer:
             tp -= len(linked)
             print(tp)
         return tp, p
+
+    @staticmethod
+    def b3(clusters, mention_map):
+        num = dem = 0
+        for c in clusters:
+            if len(c) == 1:
+                continue
+            gt_counts = collections.Counter()
+            correct = 0
+            for m in c:
+                if m in mention_map:
+                    gt_counts[mention_map[m]] += 1
+            for c2, count in gt_counts.items():
+                if len(c2) != 1:
+                    correct += count * count
+            num += correct / len(c)
+            dem += len(c)
+        return num, dem
 
     @classmethod
     def _prepare_gt(cls, gt):

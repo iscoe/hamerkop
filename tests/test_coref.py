@@ -47,7 +47,7 @@ class CorefScorerTest(unittest.TestCase):
         self.assertEqual(2, len(output_gt))
         self.assertEqual(5, len(output_gt['doc1']))
 
-    def test_update(self):
+    def test_update1(self):
         # first example from table 1 in https://www.aclweb.org/anthology/M95-1005
         gt = {
             'doc1': {
@@ -69,12 +69,69 @@ class CorefScorerTest(unittest.TestCase):
                 Mention('4', 'doc1', (14, 17), (), EntityType.PER, 'NIL11'),
             ]),
         ]
-        scorer = CorefScorer(gt)
+        scorer = CorefScorer(gt, CorefMetric.MUC)
         scorer.update(doc)
         self.assertEqual(2, scorer.recall_numerator)
         self.assertEqual(3, scorer.recall_denominator)
         self.assertEqual(2, scorer.precision_numerator)
         self.assertEqual(2, scorer.precision_denominator)
+
+    def get_example1_test_data(self):
+        # first example from "Algorithms for scoring coreference chains"
+        gt = {
+            'doc1': {
+                (0, 1): Link(EntityType.PER, LinkType.LINK, 'NIL1', None),
+                (0, 2): Link(EntityType.PER, LinkType.LINK, 'NIL1', None),
+                (0, 3): Link(EntityType.PER, LinkType.LINK, 'NIL1', None),
+                (0, 4): Link(EntityType.PER, LinkType.LINK, 'NIL1', None),
+                (0, 5): Link(EntityType.PER, LinkType.LINK, 'NIL1', None),
+                (0, 6): Link(EntityType.PER, LinkType.LINK, 'NIL2', None),
+                (0, 7): Link(EntityType.PER, LinkType.LINK, 'NIL2', None),
+                (0, 8): Link(EntityType.PER, LinkType.LINK, 'NIL3', None),
+                (0, 9): Link(EntityType.PER, LinkType.LINK, 'NIL3', None),
+                (0, 10): Link(EntityType.PER, LinkType.LINK, 'NIL3', None),
+                (0, 11): Link(EntityType.PER, LinkType.LINK, 'NIL3', None),
+                (0, 12): Link(EntityType.PER, LinkType.LINK, 'NIL3', None),
+            },
+        }
+        doc = unittest.mock.Mock()
+        doc.docid = 'doc1'
+        doc.mention_chains = [
+            MentionChain([
+                Mention('1', 'doc1', (0, 1), (), EntityType.PER, 'NIL10'),
+                Mention('2', 'doc1', (0, 2), (), EntityType.PER, 'NIL10'),
+                Mention('3', 'doc1', (0, 3), (), EntityType.PER, 'NIL10'),
+                Mention('4', 'doc1', (0, 4), (), EntityType.PER, 'NIL10'),
+                Mention('5', 'doc1', (0, 5), (), EntityType.PER, 'NIL10'),
+            ]),
+            MentionChain([
+                Mention('6', 'doc1', (0, 6), (), EntityType.PER, 'NIL11'),
+                Mention('7', 'doc1', (0, 7), (), EntityType.PER, 'NIL11'),
+                Mention('8', 'doc1', (0, 8), (), EntityType.PER, 'NIL11'),
+                Mention('9', 'doc1', (0, 9), (), EntityType.PER, 'NIL11'),
+                Mention('10', 'doc1', (0, 10), (), EntityType.PER, 'NIL11'),
+                Mention('11', 'doc1', (0, 11), (), EntityType.PER, 'NIL11'),
+                Mention('12', 'doc1', (0, 12), (), EntityType.PER, 'NIL11'),
+            ]),
+        ]
+        return gt, doc
+
+    def test_update2_muc(self):
+        gt, doc = self.get_example1_test_data()
+        scorer = CorefScorer(gt, CorefMetric.MUC)
+        scorer.update(doc)
+        self.assertEqual(9, scorer.recall_numerator)
+        self.assertEqual(9, scorer.recall_denominator)
+        self.assertEqual(9, scorer.precision_numerator)
+        self.assertEqual(10, scorer.precision_denominator)
+
+    def test_update2_b3(self):
+        gt, doc = self.get_example1_test_data()
+        scorer = CorefScorer(gt, CorefMetric.B3)
+        scorer.update(doc)
+        self.assertEqual(12, scorer.recall_numerator)
+        self.assertEqual(12, scorer.recall_denominator)
+        self.assertAlmostEqual(0.76, scorer.precision, 2)
 
 
 class UnchainedCorefTest(unittest.TestCase):
