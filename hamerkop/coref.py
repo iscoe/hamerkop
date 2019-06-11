@@ -24,6 +24,13 @@ class Coref(abc.ABC):
         pass
 
 
+class CorefReport:
+    def __init__(self, p, r, f1):
+        self.precision = p
+        self.recall = r
+        self.f1 = f1
+
+
 class CorefMetric:
     MUC = 'muc'
     B3 = 'b3'
@@ -89,6 +96,10 @@ class CorefScorer:
         if self.precision + self.recall == 0:
             return 0
         return 2 * self.precision * self.recall / (self.precision + self.recall)
+
+    @property
+    def report(self):
+        return CorefReport(self.precision, self.recall, self.f1)
 
     @staticmethod
     def muc(clusters, mention_map):
