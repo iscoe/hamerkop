@@ -1,8 +1,7 @@
 __version__ = '0.1.dev'
 
 # core classes and data structures
-from .core import Document, DocType, Entity, EntityContext, EntityOrigin, EntityType, Mention, MentionChain, \
-    Pipeline
+from .core import Document, DocType, Entity, EntityContext, EntityOrigin, EntityType, Mention, MentionChain
 
 # language detection
 from .lang import Lang, LangDetector, FixedLang, NgramLangDetector
@@ -32,3 +31,5 @@ from .candidates import CandidateGenerator, IndexBasedGenerator, CombiningGenera
 
 # 4th stage: entity resolution
 from .resolver import Resolver
+
+from .pipeline import Pipeline
