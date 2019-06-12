@@ -122,7 +122,6 @@ class CorefScorer:
                 else:
                     tp -= 1
             tp -= len(linked)
-            print(tp)
         return tp, p
 
     @staticmethod
