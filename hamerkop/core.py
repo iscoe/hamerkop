@@ -149,8 +149,8 @@ class Mention:
     :string id: Unique mention id
     :string string: Mention string (maybe be normalized)
     :string docid: Document id
-    :tuple offsets: Character offsets into the original document
-    :tuple token_offsets: Token offsets into the original document
+    :tuple offsets: Character offsets into the original document (1-based index, inclusive)
+    :tuple token_offsets: Token offsets into the original document (0-based index, exclusive)
     :string type: Entity type. See EntityType.
     :string original_string: Original mention string from the document
     :string native_string: Set if string is translated or transliterated
@@ -232,33 +232,3 @@ class Document:
 
     def __repr__(self):
         return "Document({}) with {} mentions".format(self.docid, len(self.mentions))
-
-
-class Pipeline:
-    """
-    Entity linking pipeline
-    """
-
-    def __init__(self, documents, preprocessor, coref, candidate_gen, resolver, writer):
-        """
-        :param documents: Iterator that produces Document objects
-        :param preprocessor: Mention preprocessor
-        :param coref: Coreference component
-        :param candidate_gen: Candidate generator
-        :param resolver: Entity resolution component
-        :param writer: Output writer
-        """
-        self.documents = documents
-        self.preprocessor = preprocessor
-        self.coref = coref
-        self.candidate_gen = candidate_gen
-        self.resolver = resolver
-        self.writer = writer
-
-    def run(self):
-        for doc in self.documents:
-            self.preprocessor.process(doc)
-            self.coref.coref(doc)
-            self.candidate_gen.process(doc)
-            self.resolver.resolve(doc)
-            self.writer.write(doc)

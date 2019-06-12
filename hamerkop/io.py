@@ -6,19 +6,25 @@ from .utilities import InProcessIncremental
 
 
 class InputReader:
-    def __init__(self, fp, id_assigner=None, lang_detector=None):
+    def __init__(self, fp, id_assigner=None, lang_detector=None, preparer=None):
         self.reader = read_conll(fp)
-        if id_assigner is None:
-            id_assigner = InProcessIncremental()
-        if lang_detector is None:
-            lang_detector = NgramLangDetector()
-        self.preparer = DocumentPreparer(id_assigner, lang_detector)
+        if preparer is None:
+            if id_assigner is None:
+                id_assigner = InProcessIncremental()
+            if lang_detector is None:
+                lang_detector = NgramLangDetector()
+            self.preparer = DocumentPreparer(id_assigner, lang_detector)
+        else:
+            self.preparer = preparer
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        return self.preparer.process(next(self.reader))
+        document = self.preparer.process(next(self.reader))
+        while document is None:
+            document = self.preparer.process(next(self.reader))
+        return document
 
 
 Row = collections.namedtuple('Row', 'token tag docid offsets')
@@ -77,8 +83,11 @@ class DocumentPreparer(object):
     This does not check for conditions like B-PER I-ORG.
     This passes all tag types so B-DOG will end up as a mention.
     """
-
     def __init__(self, id_assigner, lang_detector):
+        """
+        :param id_assigner: Identifier
+        :param lang_detector: LangDetector
+        """
         self.id_assigner = id_assigner
         self.lang_detector = lang_detector
 
@@ -133,6 +142,92 @@ class DocumentPreparer(object):
         mention = Mention(name, docid, (ch_start, ch_stop), token_offsets, type)
         self.id_assigner.assign(mention)
         return mention
+
+
+class DocumentPreparerUsingGroundTruth(object):
+    """
+    Prepare a document from a list of rows extracted from tagged conll file plus ground truth
+    """
+    def __init__(self, id_assigner, lang_detector, ground_truth):
+        """
+        :param id_assigner: Identifier
+        :param lang_detector: LangDetector
+        :param ground_truth: output of OutputReader (doc -> offset -> Link)
+        """
+        self.id_assigner = id_assigner
+        self.lang_detector = lang_detector
+        self.ground_truth = self._prepare_ground_truth(ground_truth)
+
+    def process(self, rows):
+        """
+        Turn a list of rows into entity mentions
+        :param rows: list of Row namedtuples
+        :return: Document or None if no mentions
+        """
+        tokens = []
+        token_index = token_start = 0
+        mentions = []
+        mention_rows = []
+        in_mention = False
+        doc_id = rows[0].docid
+        if doc_id not in self.ground_truth:
+            return None
+        gt = self.ground_truth[doc_id]
+        tag = None
+        for row in rows:
+            if in_mention:
+                mention_rows.append(row)
+                if row.offsets[1] == tag['end_offset']:
+                    mentions.append(self._extract(mention_rows, token_start, tag['type']))
+                    in_mention = False
+                    tag = None
+                    mention_rows = []
+
+            if row.offsets[0] in gt:
+                # start of a new tag
+                tag = gt[row.offsets[0]]
+                in_mention = True
+                token_start = token_index
+                mention_rows.append(row)
+                if row.offsets[1] == tag['end_offset']:
+                    # single token tag
+                    mentions.append(self._extract(mention_rows, token_start, tag['type']))
+                    in_mention = False
+                    tag = None
+                    mention_rows = []
+
+            tokens.append(row.token)
+            token_index += 1
+
+        if mentions:
+            filename = mentions[0].docid
+            lang = self.lang_detector.detect(filename, tokens)
+            return Document(mentions, tokens, lang)
+
+    def _extract(self, rows, token_start, type):
+        first_row = rows.pop(0)
+        name = first_row.token
+        ch_start = first_row.offsets[0]
+        ch_stop = first_row.offsets[1]
+        token_stop = token_start + 1
+        docid = first_row.docid
+        for row in rows:
+            name = ' '.join((name, row.token))
+            ch_stop = row.offsets[1]
+            token_stop += 1
+        token_offsets = (token_start, token_stop)
+        mention = Mention(name, docid, (ch_start, ch_stop), token_offsets, type)
+        self.id_assigner.assign(mention)
+        return mention
+
+    @staticmethod
+    def _prepare_ground_truth(gt):
+        new_gt = {}
+        for doc in gt:
+            new_gt[doc] = {}
+            for offsets in gt[doc]:
+                new_gt[doc][offsets[0]] = {'end_offset': offsets[1], 'type': gt[doc][offsets].entity_type}
+        return new_gt
 
 
 class EvalTabFormat:

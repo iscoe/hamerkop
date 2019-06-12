@@ -17,17 +17,16 @@ class PreprocessorReporterTest(unittest.TestCase):
     def test_activate(self):
         PreprocessorReporter.activate()
         self.run_preprocessor()
-        self.assertEqual(1, len(PreprocessorReporter.report['modifications']))
-        self.assertEqual(3, list(PreprocessorReporter.report['modifications'].values())[0])
-        self.assertEqual(1, len(PreprocessorReporter.report['removals']))
+        self.assertEqual(1, len(PreprocessorReporter.report.modifications))
+        self.assertEqual(3, list(PreprocessorReporter.report.modifications.values())[0])
+        self.assertEqual(1, len(PreprocessorReporter.report.removals))
 
     def test_deactivate(self):
-        PreprocessorReporter.report['modifications'].clear()
-        PreprocessorReporter.report['removals'].clear()
+        PreprocessorReporter.report.clear()
         PreprocessorReporter.deactivate()
         self.run_preprocessor()
-        self.assertEqual(0, len(PreprocessorReporter.report['modifications']))
-        self.assertEqual(0, len(PreprocessorReporter.report['removals']))
+        self.assertEqual(0, len(PreprocessorReporter.report.modifications))
+        self.assertEqual(0, len(PreprocessorReporter.report.removals))
 
     def run_preprocessor(self):
         processor = PreprocessorReporterTest.Preprocessor()

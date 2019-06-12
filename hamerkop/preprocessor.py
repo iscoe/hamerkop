@@ -3,6 +3,7 @@ import collections
 import contextlib
 import functools
 import inspect
+import io
 import logging
 import re
 
@@ -32,6 +33,37 @@ def pcm():
     return PreprocessorReporter.get()
 
 
+class PreprocessorReport:
+    def __init__(self):
+        self.modifications = collections.Counter()
+        self.removals = collections.Counter()
+
+    def clear(self):
+        self.modifications.clear()
+        self.removals.clear()
+
+    def __str__(self):
+        buf = io.StringIO()
+        buf.write('Preprocessor removals\n')
+        buf.write('---------------------\n')
+        if self.removals:
+            for c in self.removals:
+                buf.write('{}: {}\n'.format(c, self.removals[c]))
+        else:
+            buf.write('None\n')
+
+        buf.write('\n')
+        buf.write('Preprocessor modifications\n')
+        buf.write('--------------------------\n')
+        if self.modifications:
+            for c in self.modifications:
+                buf.write('{}: {}\n'.format(c, self.modifications[c]))
+        else:
+            buf.write('None\n')
+
+        return buf.getvalue()
+
+
 class ReportProperty(type):
     """
     Metaclass that adds a report class property
@@ -54,10 +86,7 @@ class PreprocessorReporter(metaclass=ReportProperty):
     instance = None
 
     def __init__(self):
-        self._report = {
-            'modifications': collections.Counter(),
-            'removals': collections.Counter(),
-        }
+        self._report = PreprocessorReport()
         self.disable()
 
     def enable(self):
@@ -96,7 +125,7 @@ class PreprocessorReporter(metaclass=ReportProperty):
         original = mention.string
         yield
         if original != mention.string:
-            self._report['modifications'].update({caller: 1})
+            self._report.modifications.update({caller: 1})
 
     @contextlib.contextmanager
     def removal(self, document):
@@ -113,7 +142,7 @@ class PreprocessorReporter(metaclass=ReportProperty):
         yield
         if original_size != len(document.mentions):
             num = original_size - len(document.mentions)
-            self._report['removals'].update({caller: num})
+            self._report.removals.update({caller: num})
 
     @staticmethod
     def get_caller():
