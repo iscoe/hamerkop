@@ -3,6 +3,7 @@ import csv
 import logging
 
 from .core import Entity, EntityType
+from .io import LinkType
 from .utilities import CaseInsensitiveDict
 
 logger = logging.getLogger(__name__)
@@ -128,18 +129,45 @@ class EntityCreator:
             return None
 
 
+class KBLoadingScorer:
+    def __init__(self, kb, gt):
+        self.kb = kb
+        self.ids = self._prepare(gt)
+        self.recall = 0
+        self.missed = set()
+
+    def score(self):
+        in_kb_count = 0
+        for entity_id in self.ids:
+            if self.kb.get_entity(entity_id):
+                in_kb_count += 1
+            else:
+                self.missed.add(entity_id)
+        self.recall = in_kb_count / len(self.ids)
+
+    def _prepare(self, gt):
+        ids = set()
+        for doc in gt:
+            for link in gt[doc].values():
+                if link.link_type == LinkType.LINK:
+                    ids.update(link.links)
+        return ids
+
+
 class MemoryKB(KB):
     """
     KB backed by a python dictionary for smaller kbs.
 
     The dictionary is entity ID -> Entity object
     """
-    def __init__(self, entities_fp, alt_names_fp, verbose=False):
+    def __init__(self, entities_fp, alt_names_fp, filter=None, verbose=False):
         """
         :param entities_fp: handle for reading the entities file
         :param alt_names_fp: handle for reading the alternate names file
+        :param filter: EntityFilter
         :param verbose: Whether to write entity loading progress to STDOUT
         """
+        self.filter = filter
         self.verbose = verbose
         self.entities = self._load_entities(entities_fp)
         self._load_alt_names(alt_names_fp)
@@ -163,6 +191,8 @@ class MemoryKB(KB):
         reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
         next(reader)
         for row in reader:
+            if self.filter and not self.filter.filter(row):
+                continue
             entity = EntityCreator.create(row)
             entities[entity.id] = entity
             entity_count += 1
@@ -227,3 +257,69 @@ class ExactMatchMemoryNameIndex(NameIndex):
                     index[entity.type][name] = []
                 index[entity.type][name].append(entity.id)
         return index
+
+
+class EntityFilter(abc.ABC):
+    """
+    Remove entities before populating a KB
+
+    The LoReHLT KB has ~10 million entities with a total of ~23 million names.
+    The vast majority of these entities are unrelated to the evaluation and present a scaling challenge.
+    We use some heuristics to prune the list of possible entities in the KB.
+    """
+    @abc.abstractmethod
+    def filter(self, row):
+        """
+        Filter the entities to only include ones that might be relevant
+        :param row: list from the entities CSV file
+        :return: True = include, False = exclude, None = delays decision for another filter in cascade
+        """
+        pass
+
+
+class CascadeEntityFilter(EntityFilter):
+    """Run a series of filters"""
+    def __init__(self, filters):
+        self.filters = filters
+
+    def filter(self, row):
+        for f in self.filters:
+            result = f.filter(row)
+            if result is None:
+                continue
+            return result
+        # no filter wanted to keep it
+        return False
+
+
+class EntityOriginFilter(EntityFilter):
+    """Keep entities from particular origins"""
+    def __init__(self, *origins):
+        """
+        :param origins: data sources for entities ('WLL', 'APB', 'AUG')
+        """
+        self.origins = origins
+
+    def filter(self, row):
+        if row[EntityCreator.ORIGIN][:3] in self.origins:
+            return True
+
+
+class EntityLinkFilter(EntityFilter):
+    """Keep entities with external links"""
+    def filter(self, row):
+        if row[EntityCreator.EXTERNAL_LINK]:
+            return True
+
+
+class EntityCountryFilter(EntityFilter):
+    """Keep entities with particular countries"""
+    def __init__(self, *cc):
+        """
+        :param cc: 2 letter country codes
+        """
+        self.cc = {code.upper() for code in cc}
+
+    def filter(self, row):
+        if row[EntityCreator.COUNTRY_CODE] in self.cc:
+            return True

@@ -10,7 +10,8 @@ from .lang import Lang, LangDetector, FixedLang, NgramLangDetector
 from .io import InputReader, CoNLLReaderException, OutputWriter, OutputReader, DocumentPreparerUsingGroundTruth
 
 # knowledge base implementations
-from .kb import KB, KBException, MemoryKB, NameIndex, ExactMatchMemoryNameIndex
+from .kb import KB, KBException, MemoryKB, NameIndex, ExactMatchMemoryNameIndex, EntityFilter, CascadeEntityFilter, \
+    EntityOriginFilter, EntityLinkFilter, EntityCountryFilter, KBLoadingScorer
 
 # string utilities
 from .string import String, Stemmer, DictStemmer, Translator, DictTranslator
