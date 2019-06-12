@@ -7,7 +7,7 @@ from .core import Document, DocType, Entity, EntityContext, EntityOrigin, Entity
 from .lang import Lang, LangDetector, FixedLang, NgramLangDetector
 
 # input and output file reading and writing
-from .io import InputReader, CoNLLReaderException, OutputWriter, OutputReader
+from .io import InputReader, CoNLLReaderException, OutputWriter, OutputReader, DocumentPreparerUsingGroundTruth
 
 # knowledge base implementations
 from .kb import KB, KBException, MemoryKB, NameIndex, ExactMatchMemoryNameIndex

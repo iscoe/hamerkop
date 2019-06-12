@@ -1,5 +1,6 @@
 import abc
 import collections
+import io
 import logging
 
 from .core import EntityType, MentionChain
@@ -29,6 +30,13 @@ class CorefReport:
         self.precision = p
         self.recall = r
         self.f1 = f1
+
+    def __str__(self):
+        buf = io.StringIO()
+        buf.write('Indoc Coref\n')
+        buf.write('-----------\n')
+        buf.write('P: {:.2f}  R: {:.2f}  F1: {:.2f}\n'.format(self.precision, self.recall, self.f1))
+        return buf.getvalue()
 
 
 class CorefMetric:

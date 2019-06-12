@@ -46,14 +46,20 @@ class PreprocessorReport:
         buf = io.StringIO()
         buf.write('Preprocessor removals\n')
         buf.write('---------------------\n')
-        for c in self.removals:
-            buf.write('{}: {}\n'.format(c, self.removals[c]))
+        if self.removals:
+            for c in self.removals:
+                buf.write('{}: {}\n'.format(c, self.removals[c]))
+        else:
+            buf.write('None\n')
 
         buf.write('\n')
         buf.write('Preprocessor modifications\n')
         buf.write('--------------------------\n')
-        for c in self.removals:
-            buf.write('{}: {}\n'.format(c, self.modifications[c]))
+        if self.modifications:
+            for c in self.modifications:
+                buf.write('{}: {}\n'.format(c, self.modifications[c]))
+        else:
+            buf.write('None\n')
 
         return buf.getvalue()
 

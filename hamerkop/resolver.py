@@ -1,4 +1,5 @@
 import abc
+import io
 
 from .io import LinkType
 
@@ -44,6 +45,13 @@ class ResolverReport:
         if self.precision + self.recall == 0:
             return 0
         return 2 * self.precision * self.recall / (self.precision + self.recall)
+
+    def __str__(self):
+        buf = io.StringIO()
+        buf.write('Entity Resolution\n')
+        buf.write('-----------\n')
+        buf.write('P: {:.2f}  R: {:.2f}  F1: {:.2f}\n'.format(self.precision, self.recall, self.f1))
+        return buf.getvalue()
 
 
 class ResolverScorer:

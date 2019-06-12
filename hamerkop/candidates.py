@@ -1,4 +1,5 @@
 import abc
+import io
 import logging
 
 from .io import LinkType
@@ -41,6 +42,13 @@ class CandidatesReport:
             return self.num_including_correct_entity / self.num_mentions_with_links
         else:
             return 0
+
+    def __str__(self):
+        buf = io.StringIO()
+        buf.write('Candidate Generation\n')
+        buf.write('--------------------\n')
+        buf.write('R: {:.2f}\n'.format(self.recall))
+        return buf.getvalue()
 
 
 class CandidatesScorer:

@@ -1,6 +1,9 @@
+import io
+
 from .candidates import CandidatesScorer
 from .coref import CorefScorer
 from .preprocessor import PreprocessorReporter
+from .resolver import ResolverScorer
 from .utilities import NotATimer, Timer
 
 
@@ -19,6 +22,21 @@ class TimeReport:
             self.candidates = NotATimer('candidates')
             self.resolver = NotATimer('resolver')
 
+    def __str__(self):
+        buf = io.StringIO()
+        buf.write('Timing Profile\n')
+        buf.write('--------------\n')
+        self.print_line(buf, 'Overall', self.main.time)
+        self.print_line(buf, 'Preprocessing', self.preprocessing.time)
+        self.print_line(buf, 'Indoc Coref', self.coref.time)
+        self.print_line(buf, 'Candidate Gen', self.candidates.time)
+        self.print_line(buf, 'Resolution', self.resolver.time)
+        return buf.getvalue()
+
+    @staticmethod
+    def print_line(buf, name, value):
+        buf.write('{: <15} {:.2f}s\n'.format(name + ':', value))
+
 
 class Report:
     def __init__(self):
@@ -27,6 +45,15 @@ class Report:
         self.coref_report = None
         self.candidates_report = None
         self.resolver_report = None
+
+    def __str__(self):
+        buf = io.StringIO()
+        buf.write(str(self.time_report) + '\n')
+        reports = [self.preprocessor_report, self.coref_report, self.candidates_report, self.resolver_report]
+        for report in reports:
+            if report:
+                buf.write(str(report) + '\n')
+        return buf.getvalue()
 
 
 class Pipeline:
@@ -59,6 +86,7 @@ class Pipeline:
         self._ground_truth = None
         self._coref_scorer = None
         self._candidates_scorer = None
+        self._resolver_scorer = None
 
     def enable_profiling(self):
         self._profiling = True
@@ -70,6 +98,7 @@ class Pipeline:
         PreprocessorReporter.activate()
         self._coref_scorer = CorefScorer(self._ground_truth)
         self._candidates_scorer = CandidatesScorer(self._ground_truth)
+        self._resolver_scorer = ResolverScorer(self._ground_truth)
 
     def enable_progress(self, expected_number=0, period=100):
         self._progress = True
@@ -99,6 +128,8 @@ class Pipeline:
                 # resolution
                 with self.report.time_report.resolver:
                     self.resolver.resolve(doc)
+                if self._scoring:
+                    self._resolver_scorer.update(doc)
 
                 # update output file
                 self.writer.write(doc)
@@ -120,5 +151,5 @@ class Pipeline:
         if self._scoring:
             self.report.preprocessor_report = PreprocessorReporter.report
             self.report.coref_report = self._coref_scorer.report
-
-        print(self.report.time_report.main.time)
+            self.report.candidates_report = self._candidates_scorer.report
+            self.report.resolver_report = self._resolver_scorer.report
