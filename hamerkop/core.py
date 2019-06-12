@@ -21,9 +21,25 @@ class EntityType:
 
 class EntityOrigin:
     GEO = "geonames"
-    WLL = "cia word leaders"
-    APB = "cia word fact book orgs"
+    WLL = "cia world leaders"
+    APB = "cia world orgs"
     AUG = "augmentation"
+    ORIGINS = {GEO, WLL, APB, AUG}
+
+    @classmethod
+    def create(cls, string):
+        if string in cls.ORIGINS:
+            return string
+        if string == 'GEO':
+            return cls.GEO
+        elif string == 'WLL':
+            return cls.WLL
+        elif string == 'APB':
+            return cls.APB
+        elif string[:3] == 'AUG':
+            return cls.AUG
+        else:
+            raise ValueError('Unknown origin: {}'.format(string))
 
 
 class DocType:
@@ -113,28 +129,26 @@ class Entity:
     :string type: Entity type
     :string name: Canonical name from the KB
     :set names: All names for entity from the KB
-    :string type: EntityType
     :string origin: Origin of the entity
     :string latitude: Latitude of entity for most GPE and LOC
     :string longitude: Longitude of entity for most GPE and LOC
     :string country: ISO-3166 2-letter country code for GPE and LOC
     :int population: Population count for some GPE and LOC
-    :dict context: Other fields like title, role, family members, etc.
     :list urls: All websites for this entity
+    :dict context: Other fields like title, role, family members, etc.
     """
-
-    def __init__(self, id, type, name, origin, context=None, lat=None, lon=None, country=None, pop=None, urls=None):
+    def __init__(self, id, type, name, origin, lat=None, lon=None, country=None, pop=None, urls=None, context=None):
         self.id = id
         self.type = type
         self.name = name
         self.names = {name}
-        self.source = origin
-        self.context = context if context else {}
+        self.origin = EntityOrigin.create(origin)
         self.latitude = lat
         self.longitude = lon
         self.country = country
-        self.population = int(pop) if pop else 0
-        self.urls = urls.split('|') if urls else []
+        self.population = pop
+        self.urls = urls
+        self.context = context if context else {}
 
     def __repr__(self):
         return "Entity({}, {}, {})".format(self.id, self.name, self.type)
