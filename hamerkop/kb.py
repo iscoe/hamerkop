@@ -1,9 +1,11 @@
 import abc
 import csv
 import logging
+import re
 
 from .core import Entity, EntityType
 from .io import LinkType
+from .string import String
 from .utilities import CaseInsensitiveDict
 
 logger = logging.getLogger(__name__)
@@ -160,14 +162,16 @@ class MemoryKB(KB):
 
     The dictionary is entity ID -> Entity object
     """
-    def __init__(self, entities_fp, alt_names_fp, filter=None, verbose=False):
+    def __init__(self, entities_fp, alt_names_fp, entity_filter=None, name_filter=None, verbose=False):
         """
         :param entities_fp: handle for reading the entities file
         :param alt_names_fp: handle for reading the alternate names file
-        :param filter: EntityFilter
+        :param entity_filter: EntityFilter
+        :param name_filter: NameFilter
         :param verbose: Whether to write entity loading progress to STDOUT
         """
-        self.filter = filter
+        self.entity_filter = entity_filter
+        self.name_filter = name_filter
         self.verbose = verbose
         self.entities = self._load_entities(entities_fp)
         self._load_alt_names(alt_names_fp)
@@ -191,17 +195,16 @@ class MemoryKB(KB):
         reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
         next(reader)
         for row in reader:
-            if self.filter and not self.filter.filter(row):
+            if self.entity_filter and not self.entity_filter.filter(row):
                 continue
             entity = EntityCreator.create(row)
             entities[entity.id] = entity
             entity_count += 1
             if self.verbose and entity_count % 1000 == 0:
-                print('KB loading: {0: >10,}'.format(entity_count), end='\r')
+                print('KB entity loading: {0: >10,}'.format(entity_count), end='\r')
         logger.info('Loaded {} entities'.format(len(entities)))
         if self.verbose:
-            # clear the progress text by writing long blank string
-            print(' ' * 40, end='\r')
+            print('KB entity loading complete: {0: >10,}'.format(entity_count))
         return entities
 
     def _load_alt_names(self, fp):
@@ -212,9 +215,15 @@ class MemoryKB(KB):
             entity_id = row[0]
             alt_name = row[1]
             if entity_id in self.entities:
-                name_count += 1
+                if self.name_filter and not self.name_filter.filter(alt_name):
+                    continue
                 self.entities[entity_id].names.add(alt_name)
+                name_count += 1
+                if self.verbose and name_count % 1000 == 0:
+                    print('KB name loading: {0: >10,}'.format(name_count), end='\r')
         logger.info('Loaded {} alternate names'.format(name_count))
+        if self.verbose:
+            print('KB name loading complete: {0: >10,}'.format(name_count))
 
 
 class NameIndex(abc.ABC):
@@ -323,3 +332,36 @@ class EntityCountryFilter(EntityFilter):
     def filter(self, row):
         if row[EntityCreator.COUNTRY_CODE] in self.cc:
             return True
+
+
+class NameFilter:
+    """
+    Filter alternate names when loading the kb by script.
+
+    English is always included. Other scripts are selected from the enumeration below.
+    """
+    GEEZ = "ge'ez"
+    ARABIC = "arabic"
+    SINHALA = "sinhala"
+    REGEXES = {
+        GEEZ: re.compile(r'^[\u1200-\u137F]+$'),  # does not include supplement or extended
+        ARABIC: re.compile(r'^[\u0600-\u06FF]+$'),  # does not include supplement or extended
+        SINHALA: re.compile(r'^[\u0D80-\u0DFF]+$'),
+    }
+
+    def __init__(self, *langs):
+        self.langs = langs
+
+    def filter(self, name):
+        s = String.replace_unicode_punct(name)
+        s = String.replace_punct(s)
+        if self.is_english(s):
+            return True
+        for lang in self.langs:
+            if re.match(self.REGEXES[lang], s):
+                return True
+        return False
+
+    @staticmethod
+    def is_english(name):
+        return all([ord(c) <= 127 for c in name])

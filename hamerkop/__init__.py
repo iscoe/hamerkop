@@ -11,13 +11,13 @@ from .io import InputReader, CoNLLReaderException, OutputWriter, OutputReader, D
 
 # knowledge base implementations
 from .kb import KB, KBException, MemoryKB, NameIndex, ExactMatchMemoryNameIndex, EntityFilter, CascadeEntityFilter, \
-    EntityOriginFilter, EntityLinkFilter, EntityCountryFilter, KBLoadingScorer
+    EntityOriginFilter, EntityLinkFilter, EntityCountryFilter, NameFilter, KBLoadingScorer
 
 # string utilities
 from .string import String, Stemmer, DictStemmer, Translator, DictTranslator
 
 # general utilities
-from .utilities import CaseInsensitiveDict, CaseInsensitiveSet, Identifier, InProcessIncremental
+from .utilities import CaseInsensitiveDict, CaseInsensitiveSet, Identifier, InProcessIncremental, Timer, NotATimer
 
 # 1st stage: preprocessing mentions
 from .preprocessor import Preprocessor, PreprocessorReporter, CascadePreprocessor, PassThru, FixType, TypeValidator, \
