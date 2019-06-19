@@ -1,6 +1,8 @@
 import abc
 import csv
 import logging
+import os
+import pickle
 import re
 
 from .core import Entity, EntityType
@@ -162,7 +164,9 @@ class MemoryKB(KB):
 
     The dictionary is entity ID -> Entity object
     """
-    def __init__(self, entities_fp, alt_names_fp, entity_filter=None, name_filter=None, verbose=False):
+    CACHE_EXT = '.cache.pkl'
+
+    def __init__(self, entities_fp, alt_names_fp, entity_filter=None, name_filter=None, verbose=False, cache=True):
         """
         :param entities_fp: handle for reading the entities file
         :param alt_names_fp: handle for reading the alternate names file
@@ -173,8 +177,19 @@ class MemoryKB(KB):
         self.entity_filter = entity_filter
         self.name_filter = name_filter
         self.verbose = verbose
-        self.entities = self._load_entities(entities_fp)
-        self._load_alt_names(alt_names_fp)
+
+        cache_path = entities_fp.name + self.CACHE_EXT
+        if cache and os.path.exists(cache_path):
+            if self.verbose:
+                print("Loading entities from the cache")
+            with open(cache_path, 'rb') as cfp:
+                self.entities = pickle.load(cfp)
+        else:
+            self.entities = self._load_entities(entities_fp)
+            self._load_alt_names(alt_names_fp)
+            if cache:
+                with open(cache_path, 'wb') as cfp:
+                    pickle.dump(self.entities, cfp)
 
     def size(self):
         return len(self.entities)
@@ -200,7 +215,7 @@ class MemoryKB(KB):
             entity = EntityCreator.create(row)
             entities[entity.id] = entity
             entity_count += 1
-            if self.verbose and entity_count % 1000 == 0:
+            if self.verbose and entity_count % 10000 == 0:
                 print('KB entity loading: {0: >10,}'.format(entity_count), end='\r')
         logger.info('Loaded {} entities'.format(len(entities)))
         if self.verbose:
@@ -219,7 +234,7 @@ class MemoryKB(KB):
                     continue
                 self.entities[entity_id].names.add(alt_name)
                 name_count += 1
-                if self.verbose and name_count % 1000 == 0:
+                if self.verbose and name_count % 10000 == 0:
                     print('KB name loading: {0: >10,}'.format(name_count), end='\r')
         logger.info('Loaded {} alternate names'.format(name_count))
         if self.verbose:
