@@ -1,6 +1,8 @@
 import abc
+import collections
 import csv
 import logging
+import math
 import os
 import pickle
 import re
@@ -246,11 +248,11 @@ class NameIndex(abc.ABC):
     Find candidates based on a name string
     """
     @abc.abstractmethod
-    def find(self, name, type, limit=25):
+    def find(self, name, entity_type, limit=25):
         """
         Find entities that possibly match this name and type pair
         :param name: name string
-        :param type: EntityType string
+        :param entity_type: EntityType string
         :param limit: maximum number of candidates to return
         :return: list of Entity objects
         """
@@ -265,9 +267,9 @@ class ExactMatchMemoryNameIndex(NameIndex):
         self.kb = kb
         self.index = self._build_index()
 
-    def find(self, name, type, limit=25):
-        if name in self.index[type]:
-            return self.kb.get_entities(self.index[type][name])
+    def find(self, name, entity_type, limit=25):
+        if name in self.index[entity_type]:
+            return self.kb.get_entities(self.index[entity_type][name])
         else:
             return []
 
@@ -281,6 +283,64 @@ class ExactMatchMemoryNameIndex(NameIndex):
                     index[entity.type][name] = []
                 index[entity.type][name].append(entity.id)
         return index
+
+
+class NgramMemoryNameIndex(NameIndex):
+    """
+    An in memory ngram index
+    """
+    def __init__(self, kb, ngram_size=4):
+        self.kb = kb
+        self.ngram_size = ngram_size
+        self.num_unique_names = 0
+        self.index = self._build_index()
+
+    def find(self, name, entity_type, limit=25):
+        ngrams = String.ngrams(self._format_string(name), self.ngram_size)
+
+        # sum the idf values of ngrams for each possible name
+        name_mass = collections.defaultdict(lambda: 0)
+        for ngram in ngrams:
+            name_ids = self.index[entity_type][ngram]
+            if len(name_ids) == 0:
+                continue
+            idf = math.log1p(self.num_unique_names / len(name_ids))
+            for name_id in name_ids:
+                name_mass[name_id] += idf
+
+        if len(name_mass) == 0:
+            return []
+
+        # select top matches based on idf mass
+        threshold = max(name_mass.values()) / 2
+        top = {k: v for k, v in name_mass.items() if v > threshold}
+        top = sorted(top, key=top.get, reverse=True)
+
+        if limit:
+            top = top[:limit]
+        return list((self.kb.get_entity(item[0]) for item in top))
+
+    def _build_index(self):
+        index = {}
+        all_names = set()
+        for entity_type in EntityType.TYPES:
+            index[entity_type] = collections.defaultdict(list)
+        for entity in self.kb:
+            for i, name in enumerate(entity.names):
+                all_names.add(name.lower())
+                name_id = (entity.id, i)
+                name = self._format_string(name)
+                ngrams = String.ngrams(name, self.ngram_size)
+                for ngram in ngrams:
+                    index[entity.type][ngram].append(name_id)
+        self.num_unique_names = len(all_names)
+        return index
+
+    @staticmethod
+    def _format_string(s):
+        s = String.replace_unicode_punct(s).lower()
+        s = '_'.join(s.split(' '))
+        return '_' + s + '_'
 
 
 class EntityFilter(abc.ABC):

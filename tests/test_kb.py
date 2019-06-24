@@ -78,3 +78,16 @@ class ExactMatchMemoryNameIndexTest(unittest.TestCase):
         index = ExactMatchMemoryNameIndex(self.kb)
         entities = index.find('John', EntityType.PER)
         self.assertEqual(2, len(entities))
+
+
+class NgramMemoryNameIndexTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        entities_filename = get_filename('data/kb/small_kb_entities.tab')
+        alt_names_filename = get_filename('data/kb/small_kb_alternate_names.tab')
+        with open(entities_filename, 'r') as entities_fp, open(alt_names_filename, 'r') as names_fp:
+            cls.kb = MemoryKB(entities_fp, names_fp)
+
+    def test_build_index(self):
+        index = NgramMemoryNameIndex(self.kb, 4)
+        self.assertTrue(('1', 0), index.index[EntityType.GPE]['_new'])

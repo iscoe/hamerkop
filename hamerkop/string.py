@@ -61,6 +61,11 @@ class String:
         """Remove the second letter of double letters"""
         return re.sub(r'([a-zA-Z])\1+', r'\1', str)
 
+    @staticmethod
+    def ngrams(s, n=2):
+        """Get a list of ngrams from a string"""
+        return [s[i:i + n] for i in range(len(s) - n + 1)]
+
 
 class Translator(abc.ABC):
     """Transliteration or translation into English"""
