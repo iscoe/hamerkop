@@ -184,14 +184,12 @@ class MemoryKB(KB):
         if cache and os.path.exists(cache_path):
             if self.verbose:
                 print("Loading entities from the cache")
-            with open(cache_path, 'rb') as cfp:
-                self.entities = pickle.load(cfp)
+                self._read_cache(cache_path)
         else:
             self.entities = self._load_entities(entities_fp)
             self._load_alt_names(alt_names_fp)
             if cache:
-                with open(cache_path, 'wb') as cfp:
-                    pickle.dump(self.entities, cfp)
+                self._write_cache(cache_path)
 
     def size(self):
         return len(self.entities)
@@ -242,6 +240,14 @@ class MemoryKB(KB):
         if self.verbose:
             print('KB name loading complete: {0: >10,}'.format(name_count))
 
+    def _write_cache(self, cache_path):
+        with open(cache_path, 'wb') as cfp:
+            pickle.dump(self.entities, cfp)
+
+    def _read_cache(self, cache_path):
+        with open(cache_path, 'rb') as cfp:
+            self.entities = pickle.load(cfp)
+
 
 class NameIndex(abc.ABC):
     """
@@ -263,9 +269,20 @@ class ExactMatchMemoryNameIndex(NameIndex):
     """
     Builds an in memory index
     """
-    def __init__(self, kb):
+    CACHE_NAME = 'exact-match.index.cache.pkl'
+
+    def __init__(self, kb, cache_dir=None):
         self.kb = kb
-        self.index = self._build_index()
+        self.index = {}
+
+        if cache_dir:
+            cache_path = os.path.join(cache_dir, self.CACHE_NAME)
+            if os.path.exists(cache_path):
+                self._read_cache(cache_path)
+        if not self.index:
+            self.index = self._build_index()
+            if cache_dir:
+                self._write_cache(cache_path)
 
     def find(self, name, entity_type, limit=25):
         if name in self.index[entity_type]:
@@ -284,16 +301,40 @@ class ExactMatchMemoryNameIndex(NameIndex):
                 index[entity.type][name].append(entity.id)
         return index
 
+    def _write_cache(self, cache_path):
+        with open(cache_path, 'wb') as cfp:
+            pickle.dump(self.index, cfp)
+
+    def _read_cache(self, cache_path):
+        with open(cache_path, 'rb') as cfp:
+            self.index = pickle.load(cfp)
+
 
 class NgramMemoryNameIndex(NameIndex):
     """
     An in memory ngram index
     """
-    def __init__(self, kb, ngram_size=4):
+    CACHE_NAME = 'ngram.index.cache.pkl'
+
+    class Data:
+        def __init__(self, num_unique_names, index):
+            self.num_unique_names = num_unique_names
+            self.index = index
+
+    def __init__(self, kb, ngram_size=4, cache_dir=None):
         self.kb = kb
         self.ngram_size = ngram_size
         self.num_unique_names = 0
-        self.index = self._build_index()
+        self.index = {}
+
+        if cache_dir:
+            cache_path = os.path.join(cache_dir, self.CACHE_NAME)
+            if os.path.exists(cache_path):
+                self._read_cache(cache_path)
+        if not self.index:
+            self.index = self._build_index()
+            if cache_dir:
+                self._write_cache(cache_path)
 
     def find(self, name, entity_type, limit=25):
         ngrams = String.ngrams(self._format_string(name), self.ngram_size)
@@ -341,6 +382,17 @@ class NgramMemoryNameIndex(NameIndex):
         s = String.replace_unicode_punct(s).lower()
         s = '_'.join(s.split(' '))
         return '_' + s + '_'
+
+    def _write_cache(self, cache_path):
+        data = self.Data(self.num_unique_names, self.index)
+        with open(cache_path, 'wb') as cfp:
+            pickle.dump(data, cfp)
+
+    def _read_cache(self, cache_path):
+        with open(cache_path, 'rb') as cfp:
+            data = pickle.load(cfp)
+            self.num_unique_names = data.num_unique_names
+            self.index = data.index
 
 
 class EntityFilter(abc.ABC):
