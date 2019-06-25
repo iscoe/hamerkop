@@ -33,6 +33,6 @@ from .coref import Coref, UnchainedCoref, ExactMatchCoref
 from .candidates import CandidateGenerator, IndexBasedGenerator, CombiningGenerator, CachingGenerator
 
 # 4th stage: entity resolution
-from .resolver import Resolver
+from .resolver import Resolver, FirstResolver
 
 from .pipeline import Pipeline
