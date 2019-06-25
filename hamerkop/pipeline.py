@@ -22,6 +22,10 @@ class TimeReport:
             self.candidates = NotATimer('candidates')
             self.resolver = NotATimer('resolver')
 
+    @property
+    def total_time(self):
+        return self.main.time
+
     def __str__(self):
         buf = io.StringIO()
         buf.write('Timing Profile\n')
@@ -48,7 +52,8 @@ class Report:
 
     def __str__(self):
         buf = io.StringIO()
-        buf.write(str(self.time_report) + '\n')
+        if self.time_report.total_time > 0:
+            buf.write(str(self.time_report) + '\n')
         reports = [self.preprocessor_report, self.coref_report, self.candidates_report, self.resolver_report]
         for report in reports:
             if report:
