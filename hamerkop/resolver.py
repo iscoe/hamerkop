@@ -84,3 +84,11 @@ class ResolverScorer:
                                 self.report.num_mentions_with_correct_candidate += 1
                                 if chain.entity and chain.entity.id in link.links:
                                     self.report.num_mentions_correct_entity += 1
+
+
+class FirstResolver(Resolver):
+    """Select the first candidate"""
+    def resolve(self, document):
+        for chain in document.mention_chains:
+            if chain.candidates:
+                chain.entity = chain.candidates[0]

@@ -10,13 +10,16 @@ from .lang import Lang, LangDetector, FixedLang, NgramLangDetector
 from .io import InputReader, CoNLLReaderException, OutputWriter, OutputReader, DocumentPreparerUsingGroundTruth
 
 # knowledge base implementations
-from .kb import KB, KBException, MemoryKB, NameIndex, ExactMatchMemoryNameIndex
+from .kb import KB, KBException, MemoryKB, \
+    NameIndex, ExactMatchMemoryNameIndex, NgramMemoryNameIndex, \
+    EntityFilter, CascadeEntityFilter, EntityOriginFilter, EntityLinkFilter, EntityCountryFilter, NameFilter, \
+    KBLoadingScorer
 
 # string utilities
 from .string import String, Stemmer, DictStemmer, Translator, DictTranslator
 
 # general utilities
-from .utilities import CaseInsensitiveDict, CaseInsensitiveSet, Identifier, InProcessIncremental
+from .utilities import CaseInsensitiveDict, CaseInsensitiveSet, Identifier, InProcessIncremental, Timer, NotATimer
 
 # 1st stage: preprocessing mentions
 from .preprocessor import Preprocessor, PreprocessorReporter, CascadePreprocessor, PassThru, FixType, TypeValidator, \
@@ -30,6 +33,6 @@ from .coref import Coref, UnchainedCoref, ExactMatchCoref
 from .candidates import CandidateGenerator, IndexBasedGenerator, CombiningGenerator, CachingGenerator
 
 # 4th stage: entity resolution
-from .resolver import Resolver
+from .resolver import Resolver, FirstResolver
 
 from .pipeline import Pipeline
