@@ -61,6 +61,26 @@ class CombiningGeneratorTest(unittest.TestCase):
         self.assertEqual(2, len(candidates))
 
 
+class CascadeGeneratorTest(unittest.TestCase):
+    def test(self):
+        mock1 = MockGenerator([
+            Entity('67', EntityType.PER, 'Henry', EntityOrigin.WLL)
+        ])
+        mock2 = MockGenerator([
+            Entity('61', EntityType.PER, 'Henry', EntityOrigin.WLL),
+            Entity('73', EntityType.PER, 'Henri', EntityOrigin.WLL)
+        ])
+        mock3 = MockGenerator([
+            Entity('99', EntityType.PER, 'Henry', EntityOrigin.WLL)
+        ])
+        gen = CascadeGenerator([mock1, mock2, mock3], 2)
+        chain = MentionChain([
+            Mention('Henry', 'doc34', (0, 1), (0, 1), EntityType.PER, 'Men1'),
+        ])
+        candidates = gen.find(chain)
+        self.assertEqual(3, len(candidates))
+
+
 class CachingGeneratorTest(unittest.TestCase):
     def test(self):
         with unittest.mock.patch.multiple(CandidateGenerator, __abstractmethods__=set()):

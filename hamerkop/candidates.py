@@ -92,6 +92,9 @@ class IndexBasedGenerator(CandidateGenerator):
 
 
 class CombiningGenerator(CandidateGenerator):
+    """
+    Combines all candidates from its generators
+    """
     def __init__(self, generators):
         """
         :param generators: list of CandidateGenerators
@@ -103,8 +106,30 @@ class CombiningGenerator(CandidateGenerator):
         for generator in self.generators:
             for entity in generator.find(mention_chain):
                 candidate_dict[entity.id] = entity
-        logger.debug("{}({}): {} total candidates".format(mention_chain.name,
-                                                          mention_chain.type, len(candidate_dict)))
+        logger.debug("{}({}): {} total candidates".format(mention_chain.name, mention_chain.type, len(candidate_dict)))
+        return list(candidate_dict.values())
+
+
+class CascadeGenerator(CandidateGenerator):
+    """
+    Call each generator in the cascade until all slots are filled
+    """
+    def __init__(self, generators, num_candidates=25):
+        """
+        :param generators: list of CandidateGenerators
+        :param num_candidates: stop the cascade after this number is surpassed
+        """
+        self.generators = generators
+        self.num_candidates = num_candidates
+
+    def find(self, mention_chain):
+        candidate_dict = {}
+        for generator in self.generators:
+            for entity in generator.find(mention_chain):
+                candidate_dict[entity.id] = entity
+            if len(candidate_dict) >= self.num_candidates:
+                break
+        logger.debug("{}({}): {} total candidates".format(mention_chain.name, mention_chain.type, len(candidate_dict)))
         return list(candidate_dict.values())
 
 
