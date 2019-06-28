@@ -83,9 +83,9 @@ class IndexBasedGenerator(CandidateGenerator):
 
     Only uses the "best" name from the mention chain.
     """
-    def __init__(self, maximum, index):
-        self.max = maximum
+    def __init__(self, index, maximum=25):
         self.index = index
+        self.max = maximum
 
     def find(self, mention_chain):
         name = mention_chain.name
