@@ -1,8 +1,7 @@
 import unittest
 import unittest.mock
-from hamerkop.core import Document, EntityType, Mention, MentionChain
+from hamerkop.core import Document, EntityType, Link, LinkType, Mention, MentionChain
 from hamerkop.coref import *
-from hamerkop.io import Link, LinkType
 from hamerkop.lang import Lang
 
 

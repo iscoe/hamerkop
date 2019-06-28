@@ -149,4 +149,4 @@ class OutputReaderTest(unittest.TestCase):
         self.assertEqual(EntityType.PER, diane.entity_type)
         self.assertEqual(LinkType.NIL, diane.link_type)
         self.assertEqual(0, len(diane.links))
-        self.assertEqual('NILC90696', diane.cluster)
+        self.assertEqual('NILC90696', diane.cluster_id)

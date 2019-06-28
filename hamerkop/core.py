@@ -227,6 +227,20 @@ class MentionChain:
         return "MentionChain for {}: {} mentions".format(self.name, len(self.mentions))
 
 
+class LinkType:
+    NIL = 'NIL'
+    LINK = 'link'
+
+
+class Link:
+    def __init__(self, entity_type, link_type, links=None, cluster_id=None, name=None):
+        self.entity_type = entity_type
+        self.link_type = link_type
+        self.links = links
+        self.cluster_id = cluster_id
+        self.name = name
+
+
 class Document:
     """
     Document with its tokens and entity mentions

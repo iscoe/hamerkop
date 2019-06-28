@@ -11,8 +11,7 @@ import os
 import pickle
 import re
 
-from .core import Entity, EntityType
-from .io import LinkType
+from .core import Entity, EntityType, LinkType
 from .string import String
 from .utilities import CaseInsensitiveDict
 

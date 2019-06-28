@@ -4,7 +4,7 @@
 
 import collections
 import csv
-from .core import Mention, Document
+from .core import Link, LinkType, Mention, Document
 from .lang import NgramLangDetector
 from .utilities import InProcessIncremental
 
@@ -277,15 +277,6 @@ class OutputWriter:
                 self.fp.write(line)
 
 
-# link from a ground truth file
-Link = collections.namedtuple('Link', 'entity_type link_type links cluster')
-
-
-class LinkType:
-    NIL = False
-    LINK = True
-
-
 class OutputReader:
     """
     Reads the LoReHLT submission format for using ground truth.
@@ -303,15 +294,19 @@ class OutputReader:
         first_row = next(reader)
         assert first_row[EvalTabFormat.SYSTEM] == 'system_run_id'
         for row in reader:
+            name = row[EvalTabFormat.MENTION_TEXT]
             doc_id = row[EvalTabFormat.DOC_AND_OFFSETS].split(':')[0]
             offset_strings = row[EvalTabFormat.DOC_AND_OFFSETS].split(':')[1].split('-')
             offsets = tuple(map(int, offset_strings))
-            link_type = 'NIL' not in row[EvalTabFormat.KB_ID]
+            if LinkType.NIL in row[EvalTabFormat.KB_ID]:
+                link_type = LinkType.NIL
+            else:
+                link_type = LinkType.LINK
             links = []
-            cluster = None
+            cluster_id = None
             if link_type == LinkType.LINK:
                 links = row[EvalTabFormat.KB_ID].split('|')
             else:
-                cluster = row[EvalTabFormat.KB_ID]
-            data[doc_id][offsets] = Link(row[EvalTabFormat.ENTITY_TYPE], link_type, links, cluster)
+                cluster_id = row[EvalTabFormat.KB_ID]
+            data[doc_id][offsets] = Link(row[EvalTabFormat.ENTITY_TYPE], link_type, links, cluster_id, name)
         return data

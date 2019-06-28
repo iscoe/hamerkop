@@ -1,8 +1,7 @@
 import unittest
 import unittest.mock
 from hamerkop.candidates import *
-from hamerkop.core import Entity, EntityOrigin, EntityType, Mention, MentionChain
-from hamerkop.io import Link, LinkType
+from hamerkop.core import Entity, EntityOrigin, EntityType, Link, LinkType, Mention, MentionChain
 
 
 class CandidatesScorerTest(unittest.TestCase):

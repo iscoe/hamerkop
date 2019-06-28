@@ -7,8 +7,7 @@ import collections
 import io
 import logging
 
-from .core import EntityType, MentionChain
-from .io import LinkType
+from .core import EntityType, LinkType, MentionChain
 from .utilities import CaseInsensitiveDict
 
 logger = logging.getLogger(__name__)
@@ -178,7 +177,7 @@ class CorefScorer:
     @staticmethod
     def _create_cluster_id(link):
         if link.link_type == LinkType.NIL:
-            return link.cluster
+            return link.cluster_id
         else:
             return '|'.join(link.links)
 
