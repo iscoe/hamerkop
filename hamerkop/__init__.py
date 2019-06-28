@@ -34,7 +34,7 @@ from .preprocessor import Preprocessor, PreprocessorReporter, CascadePreprocesso
 from .coref import Coref, UnchainedCoref, ExactMatchCoref
 
 # 3rd stage: candidate generation
-from .candidates import CandidateGenerator, IndexBasedGenerator, CombiningGenerator, CachingGenerator
+from .candidates import CandidateGenerator, IndexBasedGenerator, CombiningGenerator, CachingGenerator, CascadeGenerator
 
 # 4th stage: entity resolution
 from .resolver import Resolver, FirstResolver
