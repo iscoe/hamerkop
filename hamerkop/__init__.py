@@ -20,7 +20,7 @@ from .kb import KB, KBException, MemoryKB, \
     KBLoadingScorer
 
 # string utilities
-from .string import String, Stemmer, DictStemmer, Translator, DictTranslator
+from .string import String, Stemmer, DictStemmer, Translator, DictTranslator, URoman
 
 # general utilities
 from .utilities import CaseInsensitiveDict, CaseInsensitiveSet, Identifier, InProcessIncremental, Timer, NotATimer

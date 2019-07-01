@@ -5,9 +5,11 @@
 import abc
 import re
 import string
+import subprocess
 import sys
 import unicodedata
 
+from .lang import Lang
 from .utilities import CaseInsensitiveDict
 
 
@@ -72,14 +74,14 @@ class String:
 
 
 class Translator(abc.ABC):
-    """Transliteration or translation into English"""
+    """Translate into English"""
     @abc.abstractmethod
-    def translate(self, string, lang):
+    def translate(self, s, lang):
         """
-        Translate or transliterate the string
+        Translate the string
 
-        Can return None if not translation is available
-        :param string: string to be translated
+        Can return None if no translation is available
+        :param s: string to be translated
         :param lang: Lang code
         :return: string in latin characters
         """
@@ -94,9 +96,31 @@ class DictTranslator(Translator):
     def __init__(self, trans_map):
         self.map = CaseInsensitiveDict(trans_map)
 
-    def translate(self, string, lang):
-        if string in self.map:
-            return self.map[string]
+    def translate(self, s, lang):
+        if s in self.map:
+            return self.map[s]
+
+
+class URoman(Translator):
+    """
+    Transliterate non-English (non-Latin character) strings.
+
+    Uses Ulf Hermjakob's uroman, a universal romanizer.
+    The uroman script is written in Perl.
+    """
+    def __init__(self, uroman_path):
+        self.uroman_path = uroman_path
+
+    def translate(self, s, lang):
+        if lang == Lang.EN:
+            return
+        # ascii strings do not need transliteration
+        if all(ord(char) < 128 for char in s):
+            return
+        ps = subprocess.Popen(('echo', s), stdout=subprocess.PIPE, universal_newlines=True)
+        output = subprocess.check_output(self.uroman_path, stdin=ps.stdout, universal_newlines=True)
+        ps.wait()
+        return output
 
 
 class Stemmer(abc.ABC):
