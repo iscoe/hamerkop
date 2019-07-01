@@ -187,7 +187,7 @@ class MemoryKB(KB):
         if cache and os.path.exists(cache_path):
             if self.verbose:
                 print("Loading entities from the cache")
-                self._read_cache(cache_path)
+            self._read_cache(cache_path)
         else:
             self.entities = self._load_entities(entities_fp)
             self._load_alt_names(alt_names_fp)
