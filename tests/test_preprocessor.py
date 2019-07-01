@@ -162,19 +162,20 @@ class AcronymReplacerTest(unittest.TestCase):
         self.assertEqual('United Nations', document.mentions[1].string)
 
 
-class NameTranslatorTest(unittest.TestCase):
-    def test(self):
+class NameProjectorTest(unittest.TestCase):
+    def test_translate(self):
         translator = DictTranslator({'Bodensee': 'Lake Constance'})
-        processor = NameTranslator(translator)
+        processor = NameProjector(translator.translate, NameProjector.TRANSLATE)
         mentions = [
             Mention('Bodensee', '_NW_doc34', (1, 3), (), EntityType.GPE),
             Mention('Bulgaria', '_NW_doc34', (1, 3), (), EntityType.GPE),
         ]
         document = Document(mentions, [], Lang.DE)
         processor.process(document)
-        self.assertEqual('Lake Constance', mentions[0].string)
-        self.assertEqual('Bodensee', mentions[0].native_string)
-        self.assertIsNone(mentions[1].native_string)
+        self.assertEqual('Bodensee', mentions[0].string)
+        self.assertEqual('Lake Constance', mentions[0].translate_string)
+        self.assertIsNone(mentions[0].translit_string)
+        self.assertIsNone(mentions[1].translate_string)
 
 
 class NameStemmerTest(unittest.TestCase):

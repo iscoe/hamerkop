@@ -28,7 +28,7 @@ from .utilities import CaseInsensitiveDict, CaseInsensitiveSet, Identifier, InPr
 # 1st stage: preprocessing mentions
 from .preprocessor import Preprocessor, PreprocessorReporter, CascadePreprocessor, PassThru, FixType, TypeValidator, \
     TwitterHashtagProcessor, TwitterUsernameReplacer, TextNormalizer, GarbageRemover, TooLongMentionRemover, \
-    Blacklist, NameTranslator, NameStemmer, AcronymReplacer
+    Blacklist, NameProjector, NameStemmer, AcronymReplacer
 
 # 2nd stage: in document coreference
 from .coref import Coref, UnchainedCoref, ExactMatchCoref

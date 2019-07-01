@@ -172,19 +172,20 @@ class Mention:
     :tuple token_offsets: Token offsets into the original document (0-based index, exclusive)
     :string type: Entity type. See EntityType.
     :string original_string: Original mention string from the document
-    :string native_string: Set if string is translated or transliterated
+    :string translit_string: Optional transliteration of the string
+    :string translate_string: Optional translation of the string
     """
-
     def __init__(self, string, docid, offsets, token_offsets, type, id=None):
         # id is often assigned after creation
         self.id = id
         self.string = string
-        self.original_string = string
-        self.native_string = None
         self.docid = docid
         self.offsets = offsets
         self.token_offsets = token_offsets
         self.type = type
+        self.original_string = string
+        self.translit_string = None
+        self.translate_string = None
 
     def __repr__(self):
         return "Mention({}, {}, {})".format(self.id, self.string, self.type)

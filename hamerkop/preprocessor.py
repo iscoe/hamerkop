@@ -275,26 +275,28 @@ class AcronymReplacer(Preprocessor):
                     mention.string = self.map[mention.string]
 
 
-class NameTranslator(Preprocessor):
+class NameProjector(Preprocessor):
     """
-    Translates or transliterates name strings.
+    Projects name string (usually translation or transliteration).
 
-    Stores previous string on mention as native_string
     TODO: check for code switching and not run on English strings?
     """
-    def __init__(self, translator):
+    TRANSLIT = 'translit_string'
+    TRANSLATE = 'translate_string'
+
+    def __init__(self, func, var_name=TRANSLIT):
         """
-        :param translator: Translator object
+        :param func: Function that takes in string and language and returns string or None
         """
-        self.translator = translator
+        self.func = func
+        self.var_name = var_name
 
     def process(self, document):
         for mention in document.mentions:
             with pcm().modification(mention):
-                translation = self.translator.translate(mention.string, document.lang)
-                if translation and translation != mention.string:
-                    mention.native_string = mention.string
-                    mention.string = translation
+                new_string = self.func(mention.string, document.lang)
+                if new_string and new_string != mention.string:
+                    setattr(mention, self.var_name, new_string)
 
 
 class NameStemmer(Preprocessor):
