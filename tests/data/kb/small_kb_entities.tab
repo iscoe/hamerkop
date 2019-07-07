@@ -1,5 +1,6 @@
 origin	entity_type	entityid	name	asciiname	latitude	longitude	feature_class	feature_class_name	feature_code	feature_code_name	feature_code_description	country_code	country_code_name	cc2	admin1_code	admin1_code_name	admin2_code	admin2_code_name	admin3_code	admin4_code	population	elevation	dem	timezone	modification_date	per_gpe_loc_of_association	per_title_or_position	per_org_of_association	per_role_in_incident	per_year_of_birth	per_year_of_death	per_gender	per_family_member	note	aim	org_date_established	date_established_note	org_website	org_gpe_loc_of_association	org_members_employees_per	org_parent_org	executive_board_members	jurisdiction	trusteeship_council	national_societies	external_link
 GEO	GPE	1	New York City	New York City	42.6499	11.53335	T	mountain,hill,rock,...	T.PK	peak	a pointed elevation atop a mountain, ridge, or other hypsographic feature	US	United States		02860	Europe/Andorra					999																									http://en.wikipedia.org/wiki/New_York_City|http://fr.wikipedia.org/wiki/New_York
 GEO	GPE	2	Baltimore	Baltimore	42.6333	31.65	T	mountain,hill,rock,...	T.PK	peak	a pointed elevation atop a mountain, ridge, or other hypsographic feature	AD	Andorra	091	09024	Europe/Andorra					5789																									
-AUG	PER	10	John Adams																								President	USA			2016															
+AUG	PER	10	John Adams																							Boston	President|Vice President	USA			2016															
 AUG	PER	11	John Jay																							USA		USA																		
+APB	ORG	17	UNICEF	UNICEF																																			New York City							

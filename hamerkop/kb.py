@@ -11,7 +11,7 @@ import os
 import pickle
 import re
 
-from .core import Entity, EntityType, LinkType
+from .core import Entity, EntityType, LinkType, GeoContext, OrgContext, PerContext
 from .string import String
 from .utilities import CaseInsensitiveDict
 
@@ -109,19 +109,49 @@ class EntityCreator:
     NATIONAL_SOCIETIES = 45
     EXTERNAL_LINK = 46
 
+    ENTITY_KEYS = [ENTITY_ID, ENTITY_TYPE, NAME, ORIGIN, EXTERNAL_LINK]
+
     @classmethod
     def create(cls, row, include_context=False):
-        # TODO: not processing context yet
-        keys = [cls.ENTITY_ID, cls.ENTITY_TYPE, cls.NAME, cls.ORIGIN, cls.LATITUDE,
-                cls.LONGITUDE, cls.COUNTRY_CODE, cls.POPULATION, cls.EXTERNAL_LINK]
-        data = [row[key] for key in keys]
+        data = [row[key] for key in cls.ENTITY_KEYS]
         data[-1] = [] if data[-1] == '' else data[-1].split('|')
-        data[4] = cls._float(data[4])
-        data[5] = cls._float(data[5])
-        data[6] = data[6] if data[6] else None
-        data[7] = cls._int(data[7])
         entity = Entity(*data)
+        if include_context:
+            if entity.type == EntityType.PER:
+                context = cls._create_per_context(row)
+            elif entity.type == EntityType.ORG:
+                context = cls._create_org_context(row)
+            else:
+                context = cls._create_geo_context(row)
+            entity.context = context
         return entity
+
+    @classmethod
+    def _create_per_context(cls, row):
+        locations = row[cls.PER_GPE_LOC_OF_ASSOCIATION].split('|')
+        return PerContext(
+            location=locations[0] if locations else None,
+            titles=row[cls.PER_TITLE_OR_POSITION].split('|'),
+            organizations=row[cls.PER_ORG_OF_ASSOCIATION].split('|')
+        )
+
+    @classmethod
+    def _create_org_context(cls, row):
+        locations = row[cls.ORG_GPE_LOC_OF_ASSOCIATION].split('|')
+        return OrgContext(
+            location=locations[0] if locations else None
+        )
+
+    @classmethod
+    def _create_geo_context(cls, row):
+        country = row[cls.COUNTRY_CODE] if row[cls.COUNTRY_CODE] else None
+        return GeoContext(
+            type=row[cls.FEATURE_CODE_NAME],
+            country=country,
+            latitude=cls._float(row[cls.LATITUDE]),
+            longitude=cls._float(row[cls.LONGITUDE]),
+            population=cls._int(row[cls.POPULATION])
+        )
 
     @staticmethod
     def _float(value):
@@ -215,7 +245,7 @@ class MemoryKB(KB):
         for row in reader:
             if self.entity_filter and not self.entity_filter.filter(row):
                 continue
-            entity = EntityCreator.create(row)
+            entity = EntityCreator.create(row, True)
             entities[entity.id] = entity
             entity_count += 1
             if self.verbose and entity_count % 10000 == 0:

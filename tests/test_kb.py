@@ -15,28 +15,43 @@ class EntityCreatorTest(unittest.TestCase):
             reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
             next(reader)
             row = next(reader)
-            entity = EntityCreator.create(row)
+            entity = EntityCreator.create(row, include_context=True)
             self.assertEqual('1', entity.id)
             self.assertEqual(EntityType.GPE, entity.type)
             self.assertEqual(EntityOrigin.GEO, entity.origin)
             self.assertEqual('New York City', entity.name)
-            self.assertAlmostEqual(42.6499, entity.latitude)
-            self.assertAlmostEqual(11.53335, entity.longitude)
-            self.assertEqual('US', entity.country)
-            self.assertEqual(999, entity.population)
+            self.assertIsInstance(entity.context, GeoContext)
+            self.assertAlmostEqual(42.6499, entity.context.latitude)
+            self.assertAlmostEqual(11.53335, entity.context.longitude)
+            self.assertEqual('US', entity.context.country)
+            self.assertEqual(999, entity.context.population)
             self.assertEqual(2, len(entity.urls))
 
             row = next(reader)
             entity = EntityCreator.create(row)
             self.assertEqual('2', entity.id)
             self.assertEqual(0, len(entity.urls))
+            self.assertIsNone(entity.context)
+
+            row = next(reader)
+            entity = EntityCreator.create(row, include_context=True)
+            self.assertIsInstance(entity.context, PerContext)
+            self.assertEqual('Boston', entity.context.location)
+            self.assertEqual(['President', 'Vice President'], entity.context.titles)
+            self.assertEqual(['USA'], entity.context.organizations)
 
             row = next(reader)
             entity = EntityCreator.create(row)
-            self.assertIsNone(entity.latitude)
-            self.assertIsNone(entity.longitude)
-            self.assertIsNone(entity.population)
-            self.assertIsNone(entity.country)
+            self.assertEqual('11', entity.id)
+
+            row = next(reader)
+            entity = EntityCreator.create(row, include_context=True)
+            self.assertEqual('17', entity.id)
+            self.assertEqual(EntityType.ORG, entity.type)
+            self.assertEqual(EntityOrigin.APB, entity.origin)
+            self.assertEqual('UNICEF', entity.name)
+            self.assertIsInstance(entity.context, OrgContext)
+            self.assertEqual('New York City', entity.context.location)
 
 
 class MemoryKBTest(unittest.TestCase):
@@ -62,7 +77,7 @@ class MemoryKBTest(unittest.TestCase):
 
     def test_iterator(self):
         entity_ids = [entity.id for entity in self.kb]
-        self.assertEqual(4, len(entity_ids))
+        self.assertEqual(5, len(entity_ids))
         self.assertIn('10', entity_ids)
 
 

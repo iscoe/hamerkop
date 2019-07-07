@@ -71,60 +71,53 @@ class DocType:
 
 
 class EntityContext:
-    """LoReHLT KB entity features"""
-    gpe_loc_of_association = 0
-    # PER
-    title_or_position = 1
-    org_of_association = 2
-    role_in_incident = 3
-    year_of_birth = 4
-    year_of_death = 5
-    gender = 6
-    family_member = 7
-    # ORG
-    note = 8
-    aim = 9
-    date_established = 10
-    date_established_note = 11
-    website = 12
-    members_employees_per = 13
-    parent_org = 14
-    executive_board_members = 15
-    jurisdiction = 16
-    trusteeship_council = 17
-    national_societies = 18
+    pass
 
-    TABLE = [
-        'gpe_loc_of_association',
-        'title_or_position',
-        'org_of_association',
-        'role_in_incident',
-        'year_of_birth',
-        'year_of_death',
-        'gender',
-        'family_member',
-        'note',
-        'aim',
-        'date_established',
-        'date_established_note',
-        'website',
-        'members_employees_per',
-        'parent_org',
-        'executive_board_members',
-        'jurisdiction',
-        'trusteeship_council',
-        'national_societies',
-    ]
 
-    @classmethod
-    def get_index(cls, key):
-        key = key.replace('per:', '')
-        key = key.replace('org:', '')
-        return cls.TABLE.index(key.strip())
+class PerContext(EntityContext):
+    def __init__(self, location, titles, organizations):
+        """
+        :string location: location of the person (usually a country name)
+        """
+        self.location = location
+        self.titles = titles
+        self.organizations = organizations
 
-    @classmethod
-    def get_value(cls, index):
-        return cls.TABLE[index]
+    def __repr__(self):
+        return "PerContext({}, {}, {})".format(
+            self.location, ','.join(self.titles), ','.join(self.organizations))
+
+
+class OrgContext(EntityContext):
+    def __init__(self, location):
+        """
+        :string location: location of the organization (usually a country name)
+        """
+        self.location = location
+
+    def __repr__(self):
+        return "OrgContext({})".format(self.location)
+
+
+class GeoContext(EntityContext):
+    def __init__(self, type, country, latitude, longitude, population):
+        """
+        :string type: type of location (city, lake, road, etc.)
+        :string country: name of country
+        :float latitude: Latitude of entity for most GPE and LOC
+        :float longitude: Longitude of entity for most GPE and LOC
+        :string country: ISO-3166 2-letter country code for GPE and LOC
+        :int population: Population count for some GPE and LOC
+        """
+        self.type = type
+        self.country = country
+        self.latitude = latitude
+        self.longitude = longitude
+        self.population = population
+
+    def __repr__(self):
+        return "GeoContext({}, {}, {}, {}, {})".format(
+            self.type, self.country, self.latitude, self.longitude, self.population)
 
 
 class Entity:
@@ -135,31 +128,23 @@ class Entity:
     :string name: Canonical name from the KB
     :set names: All names for entity from the KB
     :string origin: Origin of the entity
-    :string latitude: Latitude of entity for most GPE and LOC
-    :string longitude: Longitude of entity for most GPE and LOC
-    :string country: ISO-3166 2-letter country code for GPE and LOC
-    :int population: Population count for some GPE and LOC
     :list urls: All websites for this entity
-    :dict context: Other fields like title, role, family members, etc.
+    :EntityContext context: Other fields like location, title, latitude, longitude, etc.
     """
-    def __init__(self, id, type, name, origin, lat=None, lon=None, country=None, pop=None, urls=None, context=None):
+    def __init__(self, id, type, name, origin, urls=None, context=None):
         self.id = id
         self.type = type
         self.name = name
         self.names = {name}
         self.origin = EntityOrigin.create(origin)
-        self.latitude = lat
-        self.longitude = lon
-        self.country = country
-        self.population = pop
-        self.urls = urls
-        self.context = context if context else {}
+        self.urls = urls if urls else []
+        self.context = context
 
     def __repr__(self):
         return "Entity({}, {}, {})".format(self.id, self.name, self.type)
 
     def __str__(self):
-        return "{}\t{}\t{}\t{}\t{}".format(self.id, self.name, self.type, self.country, ','.join(self.names))
+        return "{}\t{}\t{}\t{}".format(self.id, self.name, self.type, ','.join(self.names))
 
 
 class Mention:
