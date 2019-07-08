@@ -54,7 +54,7 @@ class ResolverReport:
         buf = io.StringIO()
         buf.write('Entity Resolution\n')
         buf.write('-----------\n')
-        buf.write('P: {:.2f}  R: {:.2f}  F1: {:.2f}\n'.format(self.precision, self.recall, self.f1))
+        buf.write('P: {:.3f}  R: {:.3f}  F1: {:.3f}\n'.format(self.precision, self.recall, self.f1))
         return buf.getvalue()
 
 

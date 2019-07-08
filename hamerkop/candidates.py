@@ -51,7 +51,7 @@ class CandidatesReport:
         buf = io.StringIO()
         buf.write('Candidate Generation\n')
         buf.write('--------------------\n')
-        buf.write('R: {:.2f}\n'.format(self.recall))
+        buf.write('R: {:.3f}\n'.format(self.recall))
         return buf.getvalue()
 
 
