@@ -495,7 +495,7 @@ class EntityFilter(abc.ABC):
     """
     Remove entities before populating a KB
 
-    The LoReHLT KB has ~10 million entities with a total of ~23 million names.
+    The LoReHLT KB has ~10 million entities.
     The vast majority of these entities are unrelated to the evaluation and present a scaling challenge.
     We use some heuristics to prune the list of possible entities in the KB.
     """
@@ -557,11 +557,43 @@ class EntityCountryFilter(EntityFilter):
             return True
 
 
-class NameFilter:
+class NameFilter(abc.ABC):
+    """
+    Remove names before populating a KB
+
+    The LoReHLT KB has ~23 million names. Many of these are in languages unrelated to the evaluation.
+    """
+    @abc.abstractmethod
+    def filter(self, entity_id, name):
+        """
+        Filter the name
+        :param entity_id: entity ID
+        :param name: name string
+        :return: True = include, False = exclude, None = delays decision for another filter in cascade
+        """
+        pass
+
+
+class CascadeNameFilter(NameFilter):
+    """Run a series of filters"""
+    def __init__(self, filters):
+        self.filters = filters
+
+    def filter(self, entity_id, name):
+        for f in self.filters:
+            result = f.filter(entity_id, name)
+            if result is None:
+                continue
+            return result
+        # no filter wanted to keep it
+        return False
+
+
+class ScriptBasedNameFilter:
     """
     Filter alternate names when loading the kb by script.
 
-    English is always included. Other scripts are selected from the enumeration below.
+    English is always included. Other scripts can be included.
     """
     GEEZ = "ge'ez"
     ARABIC = "arabic"
@@ -572,16 +604,16 @@ class NameFilter:
         SINHALA: re.compile(r'^[\u0D80-\u0DFF]+$'),
     }
 
-    def __init__(self, *langs):
-        self.langs = langs
+    def __init__(self, *scripts):
+        self.scripts = scripts
 
     def filter(self, name):
         s = String.replace_unicode_punct(name)
         s = String.replace_punct(s)
         if self.is_english(s):
             return True
-        for lang in self.langs:
-            if re.match(self.REGEXES[lang], s):
+        for script in self.scripts:
+            if re.match(self.REGEXES[script], s):
                 return True
         return False
 
