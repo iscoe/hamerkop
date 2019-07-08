@@ -11,12 +11,12 @@ from .core import Document, DocType, Entity, EntityContext, EntityOrigin, Entity
 from .lang import Lang, LangDetector, FixedLang, NgramLangDetector
 
 # input and output file reading and writing
-from .io import InputReader, CoNLLReaderException, OutputWriter, OutputReader, DocumentPreparerUsingGroundTruth
+from .io import InputReader, CoNLLReaderException, OutputWriter, OutputReader, DocumentPreparerUsingGroundTruth, \
+    EntityLoader, EntityFilter, CascadeEntityFilter, EntityOriginFilter, EntityLinkFilter, EntityCountryFilter, NameFilter
 
 # knowledge base implementations
 from .kb import KB, KBException, MemoryKB, \
     NameIndex, ExactMatchMemoryNameIndex, NgramMemoryNameIndex, \
-    EntityFilter, CascadeEntityFilter, EntityOriginFilter, EntityLinkFilter, EntityCountryFilter, NameFilter, \
     KBLoadingScorer
 
 # string utilities

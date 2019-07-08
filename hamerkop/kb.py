@@ -4,14 +4,12 @@
 
 import abc
 import collections
-import csv
 import logging
 import math
 import os
 import pickle
-import re
 
-from .core import Entity, EntityType, LinkType, GeoContext, OrgContext, PerContext
+from .core import EntityType, LinkType
 from .string import String
 from .utilities import CaseInsensitiveDict
 
@@ -56,116 +54,6 @@ class KB(abc.ABC):
         pass
 
 
-class EntityCreator:
-    """
-    Generates an Entity from a row from CSV file
-    """
-    # LoReHLT Knowledge Base columns
-    ORIGIN = 0
-    ENTITY_TYPE = 1
-    ENTITY_ID = 2
-    NAME = 3
-    ASCIINAME = 4
-    LATITUDE = 5
-    LONGITUDE = 6
-    FEATURE_CLASS = 7
-    FEATURE_CLASS_NAME = 8
-    FEATURE_CODE = 9
-    FEATURE_CODE_NAME = 10
-    FEATURE_CODE_DESCRIPTION = 11
-    COUNTRY_CODE = 12
-    COUNTRY_CODE_NAME = 13
-    CC2 = 14
-    ADMIN1_CODE = 15
-    ADMIN1_CODE_NAME = 16
-    ADMIN2_CODE = 17
-    ADMIN2_CODE_NAME = 18
-    ADMIN3_CODE = 19
-    ADMIN4_CODE = 20
-    POPULATION = 21
-    ELEVATION = 22
-    DEM = 23
-    TIMEZONE = 24
-    MODIFICATION_DATE = 25
-    PER_GPE_LOC_OF_ASSOCIATION = 26
-    PER_TITLE_OR_POSITION = 27
-    PER_ORG_OF_ASSOCIATION = 28
-    PER_ROLE_IN_INCIDENT = 29
-    PER_YEAR_OF_BIRTH = 30
-    PER_YEAR_OF_DEATH = 31
-    PER_GENDER = 32
-    PER_FAMILY_MEMBER = 33
-    NOTE = 34
-    AIM = 35
-    ORG_DATE_ESTABLISHED = 36
-    DATE_ESTABLISHED_NOTE = 37
-    ORG_WEBSITE = 38
-    ORG_GPE_LOC_OF_ASSOCIATION = 39
-    ORG_MEMBERS_EMPLOYEES_PER = 40
-    ORG_PARENT_ORG = 41
-    EXECUTIVE_BOARD_MEMBERS = 42
-    JURISDICTION = 43
-    TRUSTEESHIP_COUNCIL = 44
-    NATIONAL_SOCIETIES = 45
-    EXTERNAL_LINK = 46
-
-    ENTITY_KEYS = [ENTITY_ID, ENTITY_TYPE, NAME, ORIGIN, EXTERNAL_LINK]
-
-    @classmethod
-    def create(cls, row, include_context=False):
-        data = [row[key] for key in cls.ENTITY_KEYS]
-        data[-1] = [] if data[-1] == '' else data[-1].split('|')
-        entity = Entity(*data)
-        if include_context:
-            if entity.type == EntityType.PER:
-                context = cls._create_per_context(row)
-            elif entity.type == EntityType.ORG:
-                context = cls._create_org_context(row)
-            else:
-                context = cls._create_geo_context(row)
-            entity.context = context
-        return entity
-
-    @classmethod
-    def _create_per_context(cls, row):
-        locations = row[cls.PER_GPE_LOC_OF_ASSOCIATION].split('|')
-        return PerContext(
-            location=locations[0] if locations else None,
-            titles=row[cls.PER_TITLE_OR_POSITION].split('|'),
-            organizations=row[cls.PER_ORG_OF_ASSOCIATION].split('|')
-        )
-
-    @classmethod
-    def _create_org_context(cls, row):
-        locations = row[cls.ORG_GPE_LOC_OF_ASSOCIATION].split('|')
-        return OrgContext(
-            location=locations[0] if locations else None
-        )
-
-    @classmethod
-    def _create_geo_context(cls, row):
-        country = row[cls.COUNTRY_CODE] if row[cls.COUNTRY_CODE] else None
-        return GeoContext(
-            type=row[cls.FEATURE_CODE_NAME],
-            country=country,
-            latitude=cls._float(row[cls.LATITUDE]),
-            longitude=cls._float(row[cls.LONGITUDE]),
-            population=cls._int(row[cls.POPULATION])
-        )
-
-    @staticmethod
-    def _float(value):
-        try:
-            return float(value)
-        except ValueError:
-            return None
-
-    @staticmethod
-    def _int(value):
-        try:
-            return int(value)
-        except ValueError:
-            return None
 
 
 class KBLoadingScorer:
@@ -199,29 +87,24 @@ class MemoryKB(KB):
 
     The dictionary is entity ID -> Entity object
     """
-    CACHE_EXT = '.cache.pkl'
+    CACHE_FILE = 'memorykb.cache.pkl'
 
-    def __init__(self, entities_fp, alt_names_fp, entity_filter=None, name_filter=None, verbose=False, cache=True):
+    def __init__(self, entity_loader, cache_dir=None, verbose=False):
         """
-        :param entities_fp: handle for reading the entities file
-        :param alt_names_fp: handle for reading the alternate names file
-        :param entity_filter: EntityFilter
-        :param name_filter: NameFilter
-        :param verbose: Whether to write entity loading progress to STDOUT
+        :param entity_loader: Loads entities from disk or db into memory
+        :param cache_dir: Optional path to directory to cache the KB
+        :param verbose: Whether to use stdout for updates
         """
-        self.entity_filter = entity_filter
-        self.name_filter = name_filter
-        self.verbose = verbose
-
-        cache_path = entities_fp.name + self.CACHE_EXT
-        if cache and os.path.exists(cache_path):
-            if self.verbose:
-                print("Loading entities from the cache")
-            self._read_cache(cache_path)
-        else:
-            self.entities = self._load_entities(entities_fp)
-            self._load_alt_names(alt_names_fp)
-            if cache:
+        self.entities = {}
+        if cache_dir:
+            cache_path = os.path.join(cache_dir, self.CACHE_FILE)
+            if os.path.exists(cache_path):
+                if verbose:
+                    print("Loading entities from the cache")
+                self.entities = self._read_cache(cache_path)
+        if not self.entities:
+            self.entities = entity_loader.load()
+            if cache_dir:
                 self._write_cache(cache_path)
 
     def size(self):
@@ -237,49 +120,13 @@ class MemoryKB(KB):
         for entity in self.entities.values():
             yield entity
 
-    def _load_entities(self, fp):
-        entity_count = 0
-        entities = {}
-        reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
-        next(reader)
-        for row in reader:
-            if self.entity_filter and not self.entity_filter.filter(row):
-                continue
-            entity = EntityCreator.create(row, True)
-            entities[entity.id] = entity
-            entity_count += 1
-            if self.verbose and entity_count % 10000 == 0:
-                print('KB entity loading: {0: >10,}'.format(entity_count), end='\r')
-        logger.info('Loaded {} entities'.format(len(entities)))
-        if self.verbose:
-            print('KB entity loading complete: {0: >10,}'.format(entity_count))
-        return entities
-
-    def _load_alt_names(self, fp):
-        name_count = 0
-        reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
-        next(reader)
-        for row in reader:
-            entity_id = row[0]
-            alt_name = row[1]
-            if entity_id in self.entities:
-                if self.name_filter and not self.name_filter.filter(alt_name):
-                    continue
-                self.entities[entity_id].names.add(alt_name)
-                name_count += 1
-                if self.verbose and name_count % 10000 == 0:
-                    print('KB name loading: {0: >10,}'.format(name_count), end='\r')
-        logger.info('Loaded {} alternate names'.format(name_count))
-        if self.verbose:
-            print('KB name loading complete: {0: >10,}'.format(name_count))
-
     def _write_cache(self, cache_path):
         with open(cache_path, 'wb') as cfp:
             pickle.dump(self.entities, cfp)
 
     def _read_cache(self, cache_path):
         with open(cache_path, 'rb') as cfp:
-            self.entities = pickle.load(cfp)
+            return pickle.load(cfp)
 
 
 class NameIndex(abc.ABC):
@@ -302,16 +149,16 @@ class ExactMatchMemoryNameIndex(NameIndex):
     """
     Builds an in memory index
     """
-    CACHE_NAME = 'exact-match.index.cache.pkl'
+    CACHE_FILE = 'exact-match.index.cache.pkl'
 
     def __init__(self, kb, cache_dir=None):
         self.kb = kb
         self.index = {}
 
         if cache_dir:
-            cache_path = os.path.join(cache_dir, self.CACHE_NAME)
+            cache_path = os.path.join(cache_dir, self.CACHE_FILE)
             if os.path.exists(cache_path):
-                self._read_cache(cache_path)
+                self.index = self._read_cache(cache_path)
         if not self.index:
             self.index = self._build_index()
             if cache_dir:
@@ -340,14 +187,14 @@ class ExactMatchMemoryNameIndex(NameIndex):
 
     def _read_cache(self, cache_path):
         with open(cache_path, 'rb') as cfp:
-            self.index = pickle.load(cfp)
+            return pickle.load(cfp)
 
 
 class NgramMemoryNameIndex(NameIndex):
     """
     An in memory ngram index
     """
-    CACHE_NAME = 'ngram.index.cache.pkl'
+    CACHE_FILE = 'ngram.index.cache.pkl'
 
     class Data:
         def __init__(self, num_unique_names, index):
@@ -361,9 +208,9 @@ class NgramMemoryNameIndex(NameIndex):
         self.index = {}
 
         if cache_dir:
-            cache_path = os.path.join(cache_dir, self.CACHE_NAME)
+            cache_path = os.path.join(cache_dir, self.CACHE_FILE)
             if os.path.exists(cache_path):
-                self._read_cache(cache_path)
+                self.index = self._read_cache(cache_path)
         if not self.index:
             self.index = self._build_index()
             if cache_dir:
@@ -425,103 +272,4 @@ class NgramMemoryNameIndex(NameIndex):
         with open(cache_path, 'rb') as cfp:
             data = pickle.load(cfp)
             self.num_unique_names = data.num_unique_names
-            self.index = data.index
-
-
-class EntityFilter(abc.ABC):
-    """
-    Remove entities before populating a KB
-
-    The LoReHLT KB has ~10 million entities with a total of ~23 million names.
-    The vast majority of these entities are unrelated to the evaluation and present a scaling challenge.
-    We use some heuristics to prune the list of possible entities in the KB.
-    """
-    @abc.abstractmethod
-    def filter(self, row):
-        """
-        Filter the entities to only include ones that might be relevant
-        :param row: list from the entities CSV file
-        :return: True = include, False = exclude, None = delays decision for another filter in cascade
-        """
-        pass
-
-
-class CascadeEntityFilter(EntityFilter):
-    """Run a series of filters"""
-    def __init__(self, filters):
-        self.filters = filters
-
-    def filter(self, row):
-        for f in self.filters:
-            result = f.filter(row)
-            if result is None:
-                continue
-            return result
-        # no filter wanted to keep it
-        return False
-
-
-class EntityOriginFilter(EntityFilter):
-    """Keep entities from particular origins"""
-    def __init__(self, *origins):
-        """
-        :param origins: data sources for entities ('WLL', 'APB', 'AUG')
-        """
-        self.origins = origins
-
-    def filter(self, row):
-        if row[EntityCreator.ORIGIN][:3] in self.origins:
-            return True
-
-
-class EntityLinkFilter(EntityFilter):
-    """Keep entities with external links"""
-    def filter(self, row):
-        if row[EntityCreator.EXTERNAL_LINK]:
-            return True
-
-
-class EntityCountryFilter(EntityFilter):
-    """Keep entities with particular countries"""
-    def __init__(self, *cc):
-        """
-        :param cc: 2 letter country codes
-        """
-        self.cc = {code.upper() for code in cc}
-
-    def filter(self, row):
-        if row[EntityCreator.COUNTRY_CODE] in self.cc:
-            return True
-
-
-class NameFilter:
-    """
-    Filter alternate names when loading the kb by script.
-
-    English is always included. Other scripts are selected from the enumeration below.
-    """
-    GEEZ = "ge'ez"
-    ARABIC = "arabic"
-    SINHALA = "sinhala"
-    REGEXES = {
-        GEEZ: re.compile(r'^[\u1200-\u137F]+$'),  # does not include supplement or extended
-        ARABIC: re.compile(r'^[\u0600-\u06FF]+$'),  # does not include supplement or extended
-        SINHALA: re.compile(r'^[\u0D80-\u0DFF]+$'),
-    }
-
-    def __init__(self, *langs):
-        self.langs = langs
-
-    def filter(self, name):
-        s = String.replace_unicode_punct(name)
-        s = String.replace_punct(s)
-        if self.is_english(s):
-            return True
-        for lang in self.langs:
-            if re.match(self.REGEXES[lang], s):
-                return True
-        return False
-
-    @staticmethod
-    def is_english(name):
-        return all([ord(c) <= 127 for c in name])
+            return data.index

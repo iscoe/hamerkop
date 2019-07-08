@@ -150,3 +150,49 @@ class OutputReaderTest(unittest.TestCase):
         self.assertEqual(LinkType.NIL, diane.link_type)
         self.assertEqual(0, len(diane.links))
         self.assertEqual('NILC90696', diane.cluster_id)
+
+
+class EntityCreatorTest(unittest.TestCase):
+    def test(self):
+        entities_filename = get_filename('data/kb/small_kb_entities.tab')
+        with open(entities_filename, 'r') as fp:
+            reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
+            next(reader)
+            row = next(reader)
+            entity = EntityCreator.create(row, include_context=True)
+            self.assertEqual('1', entity.id)
+            self.assertEqual(EntityType.GPE, entity.type)
+            self.assertEqual(EntityOrigin.GEO, entity.origin)
+            self.assertEqual('New York City', entity.name)
+            self.assertIsInstance(entity.context, GeoContext)
+            self.assertAlmostEqual(42.6499, entity.context.latitude)
+            self.assertAlmostEqual(11.53335, entity.context.longitude)
+            self.assertEqual('US', entity.context.country)
+            self.assertEqual(999, entity.context.population)
+            self.assertEqual(2, len(entity.urls))
+
+            row = next(reader)
+            entity = EntityCreator.create(row)
+            self.assertEqual('2', entity.id)
+            self.assertEqual(0, len(entity.urls))
+            self.assertIsNone(entity.context)
+
+            row = next(reader)
+            entity = EntityCreator.create(row, include_context=True)
+            self.assertIsInstance(entity.context, PerContext)
+            self.assertEqual('Boston', entity.context.location)
+            self.assertEqual(['President', 'Vice President'], entity.context.titles)
+            self.assertEqual(['USA'], entity.context.organizations)
+
+            row = next(reader)
+            entity = EntityCreator.create(row)
+            self.assertEqual('11', entity.id)
+
+            row = next(reader)
+            entity = EntityCreator.create(row, include_context=True)
+            self.assertEqual('17', entity.id)
+            self.assertEqual(EntityType.ORG, entity.type)
+            self.assertEqual(EntityOrigin.APB, entity.origin)
+            self.assertEqual('UNICEF', entity.name)
+            self.assertIsInstance(entity.context, OrgContext)
+            self.assertEqual('New York City', entity.context.location)
