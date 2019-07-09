@@ -203,6 +203,10 @@ class MentionChain:
         self._name = value
 
     @property
+    def names(self):
+        return {x.string for x in self.mentions}
+
+    @property
     def type(self):
         return self.mentions[0].type
 

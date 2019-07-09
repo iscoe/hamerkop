@@ -40,3 +40,108 @@ class ResolverScorerTest(unittest.TestCase):
         scorer.update(doc)
         self.assertEqual(2, scorer.report.num_mentions_with_correct_candidate)
         self.assertEqual(1, scorer.report.num_mentions_correct_entity)
+
+
+class CascadeResolverTest(unittest.TestCase):
+    def test(self):
+        doc = unittest.mock.Mock()
+        doc.docid = 'doc1'
+        doc.mention_chains = [
+            MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
+        ]
+        doc.mention_chains[0].candidates = [
+            Entity('122', EntityType.PER, 'John Smith', EntityOrigin.WLL, urls=['http://en.wikipedia.org/wiki/John_Smith']),
+            Entity('123', EntityType.PER, 'John Smith', EntityOrigin.WLL, urls=['http://en.wikipedia.org/wiki/John_H_Smith']),
+            Entity('124', EntityType.PER, 'Jake Smith', EntityOrigin.WLL, urls=['http://en.wikipedia.org/wiki/John_Smith']),
+        ]
+        CascadeResolver([ExactNameResolver(), WikipediaResolver()]).resolve(doc)
+        self.assertEqual(1, len(doc.mention_chains))
+        self.assertEqual(2, len(doc.mention_chains[0].candidates))
+        self.assertEqual('122', doc.mention_chains[0].entity.id)
+
+
+class ExactNameResolverTest(unittest.TestCase):
+    def test_no_matches(self):
+        doc = unittest.mock.Mock()
+        doc.docid = 'doc1'
+        doc.mention_chains = [
+            MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
+        ]
+        doc.mention_chains[0].candidates = [Entity('122', EntityType.PER, 'John', EntityOrigin.WLL)]
+        ExactNameResolver().resolve(doc)
+        self.assertEqual(1, len(doc.mention_chains))
+        self.assertEqual(1, len(doc.mention_chains[0].candidates))
+        self.assertIsNone(doc.mention_chains[0].entity)
+
+    def test_one_match(self):
+        doc = unittest.mock.Mock()
+        doc.docid = 'doc1'
+        doc.mention_chains = [
+            MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
+        ]
+        entity1 = Entity('122', EntityType.PER, 'John', EntityOrigin.WLL)
+        entity1.names = {'John', 'J. Smith', 'john smith'}
+        doc.mention_chains[0].candidates = [entity1, Entity('123', EntityType.PER, 'Not John', EntityOrigin.WLL)]
+        ExactNameResolver().resolve(doc)
+        self.assertEqual(1, len(doc.mention_chains))
+        self.assertEqual(2, len(doc.mention_chains[0].candidates))
+        self.assertEqual(entity1, doc.mention_chains[0].entity)
+
+    def test_multiple_matches(self):
+        doc = unittest.mock.Mock()
+        doc.docid = 'doc1'
+        doc.mention_chains = [
+            MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
+        ]
+        doc.mention_chains[0].candidates = [
+            Entity('122', EntityType.PER, 'John Smith', EntityOrigin.WLL),
+            Entity('123', EntityType.PER, 'John Smith', EntityOrigin.WLL),
+            Entity('124', EntityType.PER, 'Jake Smith', EntityOrigin.WLL),
+        ]
+        ExactNameResolver().resolve(doc)
+        self.assertEqual(1, len(doc.mention_chains))
+        self.assertEqual(2, len(doc.mention_chains[0].candidates))
+        self.assertIsNone(doc.mention_chains[0].entity)
+
+
+class WikipediaResolverTest(unittest.TestCase):
+    def test_no_match(self):
+        doc = unittest.mock.Mock()
+        doc.docid = 'doc1'
+        doc.mention_chains = [
+            MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
+        ]
+        doc.mention_chains[0].candidates = [Entity('122', EntityType.PER, 'John', EntityOrigin.WLL)]
+        WikipediaResolver().resolve(doc)
+        self.assertEqual(1, len(doc.mention_chains))
+        self.assertEqual(1, len(doc.mention_chains[0].candidates))
+        self.assertIsNone(doc.mention_chains[0].entity)
+
+    def test_one_match(self):
+        doc = unittest.mock.Mock()
+        doc.docid = 'doc1'
+        doc.mention_chains = [
+            MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
+        ]
+        entity1 = Entity('122', EntityType.PER, 'John', EntityOrigin.WLL, urls=['http://en.wikipedia.org/wiki/John_Smith'])
+        doc.mention_chains[0].candidates = [entity1, Entity('123', EntityType.PER, 'Not John', EntityOrigin.WLL)]
+        WikipediaResolver().resolve(doc)
+        self.assertEqual(1, len(doc.mention_chains))
+        self.assertEqual(2, len(doc.mention_chains[0].candidates))
+        self.assertEqual(entity1, doc.mention_chains[0].entity)
+
+    def test_multiple_matches(self):
+        doc = unittest.mock.Mock()
+        doc.docid = 'doc1'
+        doc.mention_chains = [
+            MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
+        ]
+        doc.mention_chains[0].candidates = [
+            Entity('122', EntityType.PER, 'John Smith', EntityOrigin.WLL, urls=['http://en.wikipedia.org/wiki/John_Smith']),
+            Entity('123', EntityType.PER, 'John Smith', EntityOrigin.WLL, urls=['http://en.wikipedia.org/wiki/John_Smith']),
+            Entity('124', EntityType.PER, 'Jake Smith', EntityOrigin.WLL, urls=['http://en.wikipedia.org/wiki/John_P_Smith']),
+        ]
+        WikipediaResolver().resolve(doc)
+        self.assertEqual(1, len(doc.mention_chains))
+        self.assertEqual(2, len(doc.mention_chains[0].candidates))
+        self.assertIsNone(doc.mention_chains[0].entity)

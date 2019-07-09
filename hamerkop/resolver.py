@@ -4,20 +4,10 @@
 
 import abc
 import io
+import urllib.parse
 
 from .io import LinkType
-
-
-class Resolver(abc.ABC):
-    """Resolve links between mention chains and kb entities"""
-
-    @abc.abstractmethod
-    def resolve(self, document):
-        """
-        Resolve which entity candidate is best from a list of candidates for each mention chain
-        :param document: Document with mention chains and candidate sets
-        """
-        pass
+from .utilities import CaseInsensitiveSet
 
 
 class ResolverReport:
@@ -90,9 +80,103 @@ class ResolverScorer:
                                     self.report.num_mentions_correct_entity += 1
 
 
+class Resolver(abc.ABC):
+    """
+    Resolve links between mention chains and kb entities.
+
+    A resolver can select the entity that is the best link from the list of candidates.
+    It can also eliminate candidates from consideration from downstream resolvers if using a cascade.
+    """
+
+    @abc.abstractmethod
+    def resolve(self, document):
+        """
+        Resolve which entity candidate is best from a list of candidates for each mention chain
+        :param document: Document with mention chains and candidate sets
+        """
+        pass
+
+
+class CascadeResolver(Resolver):
+    """
+    Cascade over several resolvers.
+    Each resolver can filter out candidates reducing the number for the next resolver.
+    """
+    def __init__(self, resolvers):
+        """
+        :param resolvers: list of Resolver objects
+        """
+        self.resolvers = resolvers
+
+    def resolve(self, document):
+        # after each round removes the mention chains that have been resolved
+        resolved = []
+        for resolver in self.resolvers:
+            resolver.resolve(document)
+            new_resolved = [chain for chain in document.mention_chains if chain.entity is not None]
+            resolved.extend(new_resolved)
+            document.mention_chains = [chain for chain in document.mention_chains if chain.entity is None]
+            if not document.mention_chains:
+                break
+        document.mention_chains.extend(resolved)
+
+
 class FirstResolver(Resolver):
     """Select the first candidate"""
     def resolve(self, document):
         for chain in document.mention_chains:
             if chain.candidates:
                 chain.entity = chain.candidates[0]
+
+
+class ExactNameResolver(Resolver):
+    """
+    Select the match by exact name match.
+
+    If only one exact match, selects that candidate.
+    If multiple exact matches, reduces candidates to that list.
+    If no exact matches, takes no action.
+    """
+    def resolve(self, document):
+        for chain in document.mention_chains:
+            matches = []
+            names = CaseInsensitiveSet(chain.names)
+            for candidate in chain.candidates:
+                if names & CaseInsensitiveSet(candidate.names):
+                    matches.append(candidate)
+            if matches:
+                if len(matches) == 1:
+                    chain.entity = matches[0]
+                else:
+                    chain.candidates = matches
+
+
+class WikipediaResolver(Resolver):
+    """
+    Use the Entity urls to resolve the mention.
+
+    If only one match, selects that candidate.
+    If multiple matches, reduces candidates to that list.
+    If no matches, returns all candidates.
+
+    This does not handle places that include an administrative district in their wikipedia url.
+    For example, https://en.wikipedia.org/wiki/Columbia,_Maryland
+    """
+    def resolve(self, document):
+        for chain in document.mention_chains:
+            matches = []
+            links = CaseInsensitiveSet({self._create_wikipedia_link(s) for s in chain.names})
+            for candidate in chain.candidates:
+                if links & CaseInsensitiveSet(candidate.urls):
+                    matches.append(candidate)
+            if matches:
+                if len(matches) == 1:
+                    chain.entity = matches[0]
+                else:
+                    chain.candidates = matches
+
+    @staticmethod
+    def _create_wikipedia_link(string):
+        string = string.replace(' ', '_')
+        string = string.replace("’", "'")
+        return "http://en.wikipedia.org/wiki/{}".format(urllib.parse.quote(string))
