@@ -5,8 +5,10 @@
 import abc
 import collections
 import csv
+import io
 import logging
 import re
+import zipfile
 
 from .core import Document, Entity, EntityType, Link, LinkType, Mention, GeoContext, OrgContext, PerContext
 from .lang import NgramLangDetector
@@ -504,7 +506,7 @@ class EntityFilter(abc.ABC):
         """
         Filter the entities to only include ones that might be relevant
         :param row: list from the entities CSV file
-        :return: True = include, False = exclude, None = delays decision for another filter in cascade
+        :return: True = include, False = exclude (None = delays decision for another filter in cascade)
         """
         pass
 
@@ -564,12 +566,11 @@ class NameFilter(abc.ABC):
     The LoReHLT KB has ~23 million names. Many of these are in languages unrelated to the evaluation.
     """
     @abc.abstractmethod
-    def filter(self, entity_id, name):
+    def filter(self, name):
         """
         Filter the name
-        :param entity_id: entity ID
         :param name: name string
-        :return: True = include, False = exclude, None = delays decision for another filter in cascade
+        :return: True = include, False = exclude (None = delays decision for another filter in a cascade)
         """
         pass
 
@@ -579,9 +580,9 @@ class CascadeNameFilter(NameFilter):
     def __init__(self, filters):
         self.filters = filters
 
-    def filter(self, entity_id, name):
+    def filter(self, name):
         for f in self.filters:
-            result = f.filter(entity_id, name)
+            result = f.filter(name)
             if result is None:
                 continue
             return result
@@ -620,3 +621,38 @@ class ScriptBasedNameFilter:
     @staticmethod
     def is_english(name):
         return all([ord(c) <= 127 for c in name])
+
+
+class LanguageBasedNameFilter:
+    """
+    Uses Geonames to determine the language of the name string
+    """
+    LANG = 2
+    NAME = 3
+    ENGLISH = 'en'
+    ALT_NAMES_FILE = 'alternateNamesV2.txt'
+
+    def __init__(self, filename, lang):
+        """
+        :param filename: Path to alternateNamesV2.zip
+        :param lang: 2 letter language code of the language of interest
+        """
+        self.names = {}
+        self.langs = {self.ENGLISH, lang.lower()}
+        with zipfile.ZipFile(filename, 'r') as zfp:
+            with zfp.open(self.ALT_NAMES_FILE, 'r') as fp:
+                reader = csv.reader(io.TextIOWrapper(fp), delimiter='\t', quoting=csv.QUOTE_NONE)
+                for row in reader:
+                    lang = row[self.LANG]
+                    name = row[self.NAME].lower()
+                    # don't overwrite English as the language (for example, France is a name in en and fr)
+                    if name in self.names and self.names[name] in self.langs:
+                        continue
+                    self.names[name] = lang
+        self.langs.add('')  # many names have no language code and we'll allow them through in filter
+
+    def filter(self, name):
+        name = name.lower()
+        if name in self.names and self.names[name] not in self.langs:
+            return False
+        return True

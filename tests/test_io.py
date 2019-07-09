@@ -1,6 +1,7 @@
 import io
 import os
 import unittest
+import unittest.mock
 from hamerkop.io import *
 from hamerkop.core import Document, Entity, EntityOrigin, EntityType, Mention, MentionChain
 from hamerkop.lang import Lang, FixedLang
@@ -196,3 +197,76 @@ class EntityCreatorTest(unittest.TestCase):
             self.assertEqual('UNICEF', entity.name)
             self.assertIsInstance(entity.context, OrgContext)
             self.assertEqual('New York City', entity.context.location)
+
+
+class CascadeNameFilterTest(unittest.TestCase):
+    def getFilter(self, return_value):
+        f = unittest.mock.Mock()
+        f.filter = unittest.mock.Mock(return_value=return_value)
+        return f
+
+    def testTrueFalse(self):
+        f1 = self.getFilter(True)
+        f2 = self.getFilter(False)
+        nf = CascadeNameFilter([f1, f2])
+        self.assertTrue(nf.filter('test'))
+
+    def testFalseTrue(self):
+        f1 = self.getFilter(False)
+        f2 = self.getFilter(True)
+        nf = CascadeNameFilter([f1, f2])
+        self.assertTrue(not nf.filter('test'))
+
+    def testNoneTrue(self):
+        f1 = self.getFilter(None)
+        f2 = self.getFilter(True)
+        nf = CascadeNameFilter([f1, f2])
+        self.assertTrue(nf.filter('test'))
+
+    def testNone(self):
+        f1 = self.getFilter(None)
+        f2 = self.getFilter(None)
+        nf = CascadeNameFilter([f1, f2])
+        self.assertTrue(not nf.filter('test'))
+
+
+class LanguageBasedNameFilterTest(unittest.TestCase):
+    def get_buffer(self, data):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, 'w') as zfp:
+            zfp.writestr(LanguageBasedNameFilter.ALT_NAMES_FILE, data)
+        return buffer
+
+    def test_same_string(self):
+        buffer = self.get_buffer(
+            "0\t0\tfr\tFrance\n"
+            "0\t0\ten\tFrance\n"
+            "0\t0\ten\tParis\n"
+            "0\t0\tfr\tParis\n"
+        )
+        nf = LanguageBasedNameFilter(buffer, 'de')
+        self.assertTrue(nf.filter('france'))
+        self.assertTrue(nf.filter('Paris'))
+
+    def test_missing_string(self):
+        buffer = self.get_buffer(
+            "0\t0\tfr\tFrance\n"
+        )
+        nf = LanguageBasedNameFilter(buffer, 'de')
+        self.assertTrue(nf.filter('New York'))
+
+    def test_not_lang(self):
+        buffer = self.get_buffer(
+            "0\t0\tfr\tFrance\n"
+            "0\t0\tde\tBerlin\n"
+        )
+        nf = LanguageBasedNameFilter(buffer, 'de')
+        self.assertTrue(not nf.filter('France'))
+        self.assertTrue(nf.filter('Berlin'))
+
+    def test_empty_string(self):
+        buffer = self.get_buffer(
+            "0\t0\t\tFrance\n"
+        )
+        nf = LanguageBasedNameFilter(buffer, 'de')
+        self.assertTrue(nf.filter('France'))

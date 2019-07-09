@@ -13,7 +13,7 @@ from .lang import Lang, LangDetector, FixedLang, NgramLangDetector
 # input and output file reading and writing
 from .io import InputReader, CoNLLReaderException, OutputWriter, OutputReader, DocumentPreparerUsingGroundTruth, \
     EntityLoader, EntityFilter, CascadeEntityFilter, EntityOriginFilter, EntityLinkFilter, EntityCountryFilter, \
-    NameFilter, ScriptBasedNameFilter
+    NameFilter, CascadeNameFilter, ScriptBasedNameFilter, LanguageBasedNameFilter
 
 # knowledge base implementations
 from .kb import KB, KBException, MemoryKB, \
