@@ -225,6 +225,8 @@ class CorefStage(abc.ABC):
 
     def merge(self, document, to_merge):
         logger.debug('{} merging {}'.format(self.__class__.__name__, to_merge))
+        # make sure no duplicates
+        to_merge = list(set(to_merge))
         # sum starts with 0 by default so we start with []
         new_chain = MentionChain(sum([chain.mentions for chain in to_merge], []))
         chains = [x for x in document.mention_chains if x not in to_merge]
@@ -273,14 +275,14 @@ class AcronymStage(CorefStage):
             acronym = self._get_acronym(chain)
             if acronym:
                 possible_acronyms[chain] = acronym
-        if possible_acronyms:
-            for chain, acronym in possible_acronyms.items():
-                for other_chain in chains:
-                    if self._is_match(acronym, other_chain):
-                        self.merge(document, [chain, other_chain])
-                        # only matching to first potential match
-                        # likely better to use token offset distance
-                        break
+        for chain, acronym in possible_acronyms.items():
+            for other_chain in chains:
+                if self._is_match(acronym, other_chain):
+                    self.merge(document, [chain, other_chain])
+                    # only matching to first potential match.
+                    # likely better to use token offset distance.
+                    # also this assumes exact name matches have been chained already.
+                    break
 
     def _get_acronym(self, chain):
         for mention in chain.mentions:
@@ -294,4 +296,40 @@ class AcronymStage(CorefStage):
         for mention in chain.mentions:
             if acronym == ''.join(word[0].upper() for word in mention.string.split()):
                 return True
+        return False
+
+
+class PersonLastNameStage(CorefStage):
+    """
+    Combine PER mentions where the full name and just the last name are used.
+
+    Does not handle multi-token last names.
+    If more than one person in a document referred to by last name, they get merged.
+    """
+    def update(self, document):
+        person_chains = [chain for chain in document.mention_chains if chain.type == EntityType.PER]
+        last_name_chains = {}
+        for chain in person_chains:
+            last_name = self._get_last_name(chain)
+            if last_name:
+                last_name_chains[chain] = last_name
+        for last_name_chain, last_name in last_name_chains.items():
+            matches = [chain for chain in person_chains if self._is_match(last_name, chain)]
+            if matches:
+                matches.append(last_name_chain)
+                self.merge(document, matches)
+
+    def _get_last_name(self, chain):
+        for mention in chain.mentions:
+            # only using the first single token in the chain
+            if ' ' not in mention.string:
+                return mention.string
+        return None
+
+    def _is_match(self, last_name, chain):
+        for mention in chain.mentions:
+            if ' ' in mention.string:
+                possible_last_name = mention.string.split()[-1]
+                if last_name.lower() == possible_last_name.lower():
+                    return True
         return False

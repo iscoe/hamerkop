@@ -182,3 +182,21 @@ class AcronymStageTest(unittest.TestCase):
         stage = AcronymStage(2)
         stage.update(doc)
         self.assertEqual(2, len(doc.mention_chains))
+
+
+class PersonLastNameStageTest(unittest.TestCase):
+    def test(self):
+        doc = unittest.mock.Mock()
+        doc.mention_chains = [
+            MentionChain([Mention('Ed Smith', '_DF_doc34', (141, 149), (22, 23), EntityType.PER, 'Men1')]),
+            MentionChain([Mention('Smith', '_DF_doc34', (146, 154), (24, 25), EntityType.PER, 'Men2')]),
+            MentionChain([Mention('Ben Smithy', '_DF_doc34', (173, 181), (36, 37), EntityType.PER, 'Men3')]),
+            MentionChain([Mention('ed smith', '_DF_doc34', (186, 194), (51, 52), EntityType.PER, 'Men4')]),
+            MentionChain([Mention('Tony Smith', '_DF_doc34', (237, 245), (71, 72), EntityType.ORG, 'Men5')]),
+            MentionChain([Mention('Smith Jones', '_DF_doc34', (298, 306), (36, 37), EntityType.PER, 'Men6')]),
+        ]
+        stage = PersonLastNameStage()
+        stage.update(doc)
+
+        self.assertEqual(4, len(doc.mention_chains))
+        self.assertEqual(sorted([1, 1, 1, 3]), sorted(list(map(len, doc.mention_chains))))
