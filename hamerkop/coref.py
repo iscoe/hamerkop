@@ -4,6 +4,7 @@
 
 import abc
 import collections
+import copy
 import io
 import logging
 
@@ -193,72 +194,71 @@ class CorefScorer:
         return mention_map
 
 
-class CorefUpdate(abc.ABC):
+class CascadeCoref(Coref):
+    """
+    Implementation of Stanford Sieve.
+
+    Every mentions starts as its own cluster (mention chain).
+    Each stage gets to merge clusters (or possibly split).
+    Typically, the sieve starts with the highest precision stages.
+    """
+    def __init__(self, stages):
+        self.stages = stages
+
+    def coref(self, document):
+        document.mention_chains = [MentionChain([mention]) for mention in document.mentions]
+        for stage in self.stages:
+            stage.update(document)
+
+
+class CorefStage(abc.ABC):
     """
     Update the current mention chains (split or merge)
     """
     @abc.abstractmethod
     def update(self, document):
         """
-        Process the current mention chains to merge or split some
+        Process the current mention chains
         :param document: Document
         """
         pass
 
-    def merge(self, chains, *to_merge):
+    def merge(self, document, to_merge):
         logger.debug('{} merging {}'.format(self.__class__.__name__, to_merge))
+        # sum starts with 0 by default so we start with []
         new_chain = MentionChain(sum([chain.mentions for chain in to_merge], []))
-        chains = [x for x in chains if x not in to_merge]
+        chains = [x for x in document.mention_chains if x not in to_merge]
         chains.append(new_chain)
-        return chains
+        document.mention_chains = chains
 
 
-class TwoStageCoref(Coref):
+class ExactMatchStage(CorefStage):
     """
-    Create mention chains with a Coref component and then update with one or more CorefUpdate components
+    Mentions strings that are exact matches are chained (case insensitive)
     """
-    def __init__(self, coref, updaters):
-        self._coref = coref
-        self._updaters = updaters
-
-    def coref(self, document):
-        self._coref.coref(document)
-        for updater in self._updaters:
-            updater.update(document)
-
-
-class UnchainedCoref(Coref):
-    """
-    Each mention gets its own chain
-    """
-    def coref(self, document):
-        document.mention_chains = [MentionChain([mention]) for mention in document.mentions]
-
-
-class ExactMatchCoref(Coref):
-    """
-    Mentions strings that are exact matches are chained (case not considered)
-    """
-    def coref(self, document):
-        chain_data = {}
-        for entity_type in EntityType.TYPES:
-            chain_data[entity_type] = CaseInsensitiveDict()
-        for mention in document.mentions:
-            if mention.string not in chain_data[mention.type]:
-                chain_data[mention.type][mention.string] = []
-            chain_data[mention.type][mention.string].append(mention)
-        document.mention_chains = []
+    def update(self, document):
+        # find mention chains that share a name string
+        chain_data = collections.defaultdict(CaseInsensitiveDict)
+        for chain in document.mention_chains:
+            for mention in chain.mentions:
+                if mention.string not in chain_data[mention.type]:
+                    chain_data[mention.type][mention.string] = []
+                chain_data[mention.type][mention.string].append(chain)
+        # merge them
         for entity_type in chain_data:
-            chains = [MentionChain(chain) for chain in chain_data[entity_type].values()]
-            document.mention_chains.extend(chains)
+            for name, chains in chain_data[entity_type].items():
+                if len(chains) > 1:
+                    self.merge(document, chains)
 
 
-class CorefAcronymUpdate(CorefUpdate):
+class AcronymStage(CorefStage):
     """
-    Finds best match for names that look like acronyms
+    Finds names that match name strings identified as acronyms
 
     This only works for scripts that support case.
     This does not handle words that are dropped like 'of'.
+    This assumes that the acronym mentions have not been matched
+    with any other mentions (besides the same acronym string).
     """
     def __init__(self, min_length):
         """
@@ -267,31 +267,31 @@ class CorefAcronymUpdate(CorefUpdate):
         self.min_length = min_length
 
     def update(self, document):
-        acronym_chains = [chain for chain in document.mention_chains if self.is_acronym(chain.name)]
-        if acronym_chains:
-            other_chains = [(chain, self.create_acronym(chain.name)) for chain in document.mention_chains
-                            if chain not in acronym_chains]
-            for acronym_chain in acronym_chains:
-                matches = []
-                for chain, acronym in other_chains:
-                    if acronym_chain.type != chain.type:
-                        continue
-                    if acronym_chain.name == acronym:
-                        matches.append(chain)
-                if matches:
-                    matches = self.rank(acronym_chain, matches)
-                    document.mention_chains = self.merge(document.mention_chains, acronym_chain, matches[0])
+        chains = copy.copy(document.mention_chains)
+        possible_acronyms = {}
+        for chain in chains:
+            acronym = self._get_acronym(chain)
+            if acronym:
+                possible_acronyms[chain] = acronym
+        if possible_acronyms:
+            for chain, acronym in possible_acronyms.items():
+                for other_chain in chains:
+                    if self._is_match(acronym, other_chain):
+                        self.merge(document, [chain, other_chain])
+                        # only matching to first potential match
+                        # likely better to use token offset distance
+                        break
+
+    def _get_acronym(self, chain):
+        for mention in chain.mentions:
+            if len(mention.string) < self.min_length:
+                continue
+            if mention.string.upper() == mention.string:
+                return mention.string
 
     @staticmethod
-    def rank(acronym_chain, matches):
-        # TODO for now default to first instance
-        return matches
-
-    def is_acronym(self, string):
-        if len(string) < self.min_length:
-            return False
-        return string.upper() == string
-
-    @staticmethod
-    def create_acronym(string):
-        return ''.join(word[0].upper() for word in string.split())
+    def _is_match(acronym, chain):
+        for mention in chain.mentions:
+            if acronym == ''.join(word[0].upper() for word in mention.string.split()):
+                return True
+        return False
