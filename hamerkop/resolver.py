@@ -3,34 +3,51 @@
 # Distributed under the terms of the Apache 2.0 License.
 
 import abc
+import collections
 import io
 import urllib.parse
 
-from .io import LinkType
+from .core import EntityType, LinkType
 from .utilities import CaseInsensitiveSet
 
 
 class ResolverReport:
-    """Report about Resolver Performance"""
+    """
+    Report about Resolver Performance.
+
+    This contains P, R, and F1 statistics for mentions broken down by entity type.
+    """
     def __init__(self):
-        # recall denominator
-        self.num_mentions_with_correct_candidate = 0
         # numerator
-        self.num_mentions_correct_entity = 0
+        self.num_mentions_correct_entity = collections.defaultdict(int)
+        # recall denominator
+        self.num_mentions_with_correct_candidate = collections.defaultdict(int)
         # precision denominator
-        self.num_mentions_with_links = 0
+        self.num_mentions_with_links = collections.defaultdict(int)
+
+    def update(self, name, entity_type, correct):
+        """
+        :param name: Mention name
+        :param entity_type: Entity type
+        :param correct: Was the correct entity chosen
+        """
+        self.num_mentions_with_correct_candidate[entity_type] += 1
+        if correct:
+            self.num_mentions_correct_entity[entity_type] += 1
 
     @property
     def precision(self):
-        if self.num_mentions_with_links:
-            return self.num_mentions_correct_entity / self.num_mentions_with_links
+        num_mentions_with_links = sum(self.num_mentions_with_links.values())
+        if num_mentions_with_links:
+            return sum(self.num_mentions_correct_entity.values()) / num_mentions_with_links
         else:
             return 0
 
     @property
     def recall(self):
-        if self.num_mentions_with_correct_candidate:
-            return self.num_mentions_correct_entity / self.num_mentions_with_correct_candidate
+        num_mentions_with_correct_candidate = sum(self.num_mentions_with_correct_candidate.values())
+        if num_mentions_with_correct_candidate:
+            return sum(self.num_mentions_correct_entity.values()) / num_mentions_with_correct_candidate
         else:
             return 0
 
@@ -40,11 +57,37 @@ class ResolverReport:
             return 0
         return 2 * self.precision * self.recall / (self.precision + self.recall)
 
+    def get_precision_by_type(self, entity_type):
+        if self.num_mentions_with_links[entity_type]:
+            return self.num_mentions_correct_entity[entity_type] / self.num_mentions_with_links[entity_type]
+        else:
+            return 0
+
+    def get_recall_by_type(self, entity_type):
+        if self.num_mentions_with_correct_candidate[entity_type]:
+            return self.num_mentions_correct_entity[entity_type] / self.num_mentions_with_correct_candidate[entity_type]
+        else:
+            return 0
+
+    def get_f1_by_type(self, entity_type):
+        p = self.get_precision_by_type(entity_type)
+        r = self.get_recall_by_type(entity_type)
+        if p + r == 0:
+            return 0
+        return 2 * p * r / (p + r)
+
+    def get_stats_by_type(self, entity_type):
+        return self.get_precision_by_type(entity_type), \
+               self.get_recall_by_type(entity_type), \
+               self.get_f1_by_type(entity_type)
+
     def __str__(self):
         buf = io.StringIO()
         buf.write('Entity Resolution\n')
         buf.write('-----------\n')
         buf.write('P: {:.3f}  R: {:.3f}  F1: {:.3f}\n'.format(self.precision, self.recall, self.f1))
+        for entity_type in EntityType.TYPES:
+            buf.write('  {} P: {:.3f}  R: {:.3f}  F1: {:.3f}\n'.format(entity_type, *self.get_stats_by_type(entity_type)))
         return buf.getvalue()
 
 
@@ -69,15 +112,14 @@ class ResolverScorer:
                 for mention in chain.mentions:
                     # precision denominator
                     if chain.entity:
-                        self.report.num_mentions_with_links += 1
+                        self.report.num_mentions_with_links[chain.type] += 1
                     # numerator and recall denominator
                     if mention.offsets in doc_gt:
                         link = doc_gt[mention.offsets]
                         if link.link_type == LinkType.LINK:
                             if set(link.links).intersection(set(candidates)):
-                                self.report.num_mentions_with_correct_candidate += 1
-                                if chain.entity and chain.entity.id in link.links:
-                                    self.report.num_mentions_correct_entity += 1
+                                correct = chain.entity and chain.entity.id in link.links
+                                self.report.update(link.name, link.entity_type, correct)
 
 
 class Resolver(abc.ABC):

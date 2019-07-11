@@ -3,10 +3,11 @@
 # Distributed under the terms of the Apache 2.0 License.
 
 import abc
+import collections
 import io
 import logging
 
-from .io import LinkType
+from .core import EntityType, LinkType
 
 logger = logging.getLogger(__name__)
 
@@ -37,13 +38,25 @@ class CandidateGenerator(abc.ABC):
 
 class CandidatesReport:
     def __init__(self):
-        self.num_mentions_with_links = 0
-        self.num_including_correct_entity = 0
+        self.num_mentions_with_links = collections.defaultdict(int)
+        self.num_including_correct_entity = collections.defaultdict(int)
+
+    def update(self, name, entity_type, correct):
+        self.num_mentions_with_links[entity_type] += 1
+        if correct:
+            self.num_including_correct_entity[entity_type] += 1
 
     @property
     def recall(self):
-        if self.num_mentions_with_links:
-            return self.num_including_correct_entity / self.num_mentions_with_links
+        num_mentions_with_links = sum(self.num_mentions_with_links.values())
+        if num_mentions_with_links:
+            return sum(self.num_including_correct_entity.values()) / num_mentions_with_links
+        else:
+            return 0
+
+    def get_recall_by_type(self, entity_type):
+        if self.num_mentions_with_links[entity_type]:
+            return self.num_including_correct_entity[entity_type] / self.num_mentions_with_links[entity_type]
         else:
             return 0
 
@@ -52,6 +65,8 @@ class CandidatesReport:
         buf.write('Candidate Generation\n')
         buf.write('--------------------\n')
         buf.write('R: {:.3f}\n'.format(self.recall))
+        for entity_type in EntityType.TYPES:
+            buf.write('  {} R: {:.3f}\n'.format(entity_type, self.get_recall_by_type(entity_type)))
         return buf.getvalue()
 
 
@@ -72,9 +87,7 @@ class CandidatesScorer:
                     if mention.offsets in doc_gt:
                         link = doc_gt[mention.offsets]
                         if link.link_type == LinkType.LINK:
-                            self.report.num_mentions_with_links += 1
-                            if set(link.links).intersection(set(candidates)):
-                                self.report.num_including_correct_entity += 1
+                            self.report.update(link.name, link.entity_type, set(link.links).intersection(set(candidates)))
 
 
 class IndexBasedGenerator(CandidateGenerator):

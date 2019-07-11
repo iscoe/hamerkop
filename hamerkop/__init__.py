@@ -38,6 +38,6 @@ from .coref import Coref, CascadeCoref, CorefStage, ExactMatchStage, AcronymStag
 from .candidates import CandidateGenerator, IndexBasedGenerator, CombiningGenerator, CachingGenerator, CascadeGenerator
 
 # 4th stage: entity resolution
-from .resolver import Resolver, FirstResolver
+from .resolver import Resolver, CascadeResolver, FirstResolver, ExactNameResolver, WikipediaResolver
 
 from .pipeline import Pipeline
