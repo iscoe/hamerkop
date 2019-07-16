@@ -21,10 +21,13 @@ from .kb import KB, KBException, MemoryKB, \
     KBLoadingScorer
 
 # string utilities
-from .string import String, Stemmer, DictStemmer, Translator, DictTranslator, URoman
+from .string import String, Stemmer, DictStemmer, \
+    Translator, TranslatorMemoryCache, TranslatorPersistentCache, DictTranslator, URoman
 
 # general utilities
-from .utilities import CaseInsensitiveDict, CaseInsensitiveSet, Identifier, InProcessIncremental, Timer, NotATimer
+from .utilities import CaseInsensitiveDict, CaseInsensitiveSet, Identifier, InProcessIncremental, Timer, NotATimer, \
+    TsvKeyValueCache
+
 
 # 1st stage: preprocessing mentions
 from .preprocessor import Preprocessor, PreprocessorReporter, CascadePreprocessor, PassThru, FixType, TypeValidator, \

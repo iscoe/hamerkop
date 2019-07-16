@@ -1,3 +1,5 @@
+import tempfile
+import shutil
 import unittest
 from hamerkop.core import EntityType, Mention
 from hamerkop.utilities import *
@@ -55,3 +57,26 @@ class IdentifierTest(unittest.TestCase):
         self.assertEqual('M1', mention.id)
         ia.assign(mention)
         self.assertEqual('M2', mention.id)
+
+
+class TsvKeyValueCacheTest(unittest.TestCase):
+    def test(self):
+        cache_dir = None
+        try:
+            cache_dir = tempfile.mkdtemp()
+            cache_file = os.path.join(cache_dir, 'test.tsv')
+            cache = TsvKeyValueCache(cache_dir, 'test', 3)
+            self.assertNotIn('iceland', cache)
+            self.assertFalse(os.path.exists(cache_file))
+            cache.set('iceland', 'cold')
+            cache['spain'] = 'hot'
+            self.assertFalse(os.path.exists(cache_file))
+            cache.set('bermuda', 'hot')
+            self.assertTrue(os.path.exists(cache_file))
+            self.assertIn('bermuda', cache)
+            self.assertEqual('hot', cache['bermuda'])
+            with open(cache_file, 'r') as fp:
+                lines = fp.readlines()
+                self.assertIn('iceland\tcold\n', lines)
+        finally:
+            shutil.rmtree(cache_dir)

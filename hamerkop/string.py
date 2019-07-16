@@ -3,6 +3,7 @@
 # Distributed under the terms of the Apache 2.0 License.
 
 import abc
+import functools
 import re
 import string
 import subprocess
@@ -99,6 +100,36 @@ class DictTranslator(Translator):
     def translate(self, s, lang):
         if s in self.map:
             return self.map[s]
+
+
+class TranslatorMemoryCache(Translator):
+    """
+    LRU Memory cache for translations
+    """
+    def __init__(self, translator, size=1000):
+        self.translator = translator
+        self.translate = functools.lru_cache(maxsize=size)(self.translate)
+
+    def translate(self, s, lang):
+        return self.translator.translate(s, lang)
+
+
+class TranslatorPersistentCache(Translator):
+    """
+    Persistent cache for translations
+    """
+    def __init__(self, translator, cache):
+        self.translator = translator
+        self.cache = cache
+
+    def translate(self, s, lang):
+        if s in self.cache:
+            return self.cache[s]
+        else:
+            t = self.translator.translate(s, lang)
+            if t:
+                self.cache[s] = t
+            return t
 
 
 class URoman(Translator):

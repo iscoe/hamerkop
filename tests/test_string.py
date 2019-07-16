@@ -79,3 +79,13 @@ class DictStemmerTest(unittest.TestCase):
         stemmer = DictStemmer(mapping)
         for test_case in test_cases:
             self.assertEqual(test_case.expect, stemmer.stem(test_case.input, Lang.DEU))
+
+
+class TranslatorPersistentCacheTest(unittest.TestCase):
+    def test(self):
+        cache = {}
+        trans = TranslatorPersistentCache(DictTranslator({'1': 'one', '2': 'two'}), cache)
+        self.assertEqual('one', trans.translate('1', Lang.ENG))
+        self.assertEqual('one', trans.translate('1', Lang.ENG))
+        self.assertIsNone(trans.translate('3', Lang.ENG))
+        self.assertEqual({'1': 'one'}, cache)

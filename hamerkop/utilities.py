@@ -4,6 +4,8 @@
 
 import abc
 import collections
+import csv
+import os
 import timeit
 
 
@@ -117,3 +119,52 @@ class NotATimer:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+
+class TsvKeyValueCache:
+    """
+    File-backed dictionary cache for write once setting.
+    This maintains a memory-based dictionary and periodically adds
+    new elements to disk. The file on disk is added to rather than
+    overwritten so this is very inefficient if changing values often.
+    Call sync() before terminating the program to guarantee everything
+    is written to disk.
+    This is NOT thread safe.
+    """
+    def __init__(self, cache_dir, name, sync_period=50):
+        self.filename = os.path.join(cache_dir, name + '.tsv')
+        self.sync_period = sync_period
+        self.data = {}
+        self.new_data = {}
+        self._load()
+
+    def get(self, key):
+        return self.data.get(key)
+
+    def set(self, key, value):
+        self.data[key] = value
+        self.new_data[key] = value
+        if len(self.new_data) >= self.sync_period:
+            self.sync()
+
+    def __getitem__(self, key):
+        return self.get(key)
+
+    def __setitem__(self, key, value):
+        self.set(key, value)
+
+    def __contains__(self, item):
+        return item in self.data
+
+    def _load(self):
+        if os.path.exists(self.filename):
+            with open(self.filename, 'r') as fp:
+                reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
+                for row in reader:
+                    self.data[row[0]] = row[1]
+
+    def sync(self):
+        with open(self.filename, 'a') as fp:
+            for key in self.new_data:
+                fp.write("{}\t{}\n".format(key, self.new_data[key]))
+        self.new_data.clear()
