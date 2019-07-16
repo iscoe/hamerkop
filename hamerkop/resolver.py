@@ -126,7 +126,7 @@ class ResolverScorer:
                         link = doc_gt[mention.offsets]
                         if link.link_type == LinkType.LINK:
                             if set(link.links).intersection(set(candidates)):
-                                correct = chain.entity and chain.entity.id in link.links
+                                correct = chain.entity is not None and chain.entity.id in link.links
                                 self.report.update(mention.string, link.entity_type, correct=correct)
                         elif chain.entity:
                             # mention has a selected candidate but is NIL in ground truth
