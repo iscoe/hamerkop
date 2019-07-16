@@ -87,7 +87,8 @@ class ResolverReport:
         buf.write('-----------\n')
         buf.write('P: {:.3f}  R: {:.3f}  F1: {:.3f}\n'.format(self.precision, self.recall, self.f1))
         for entity_type in EntityType.TYPES:
-            buf.write('  {} P: {:.3f}  R: {:.3f}  F1: {:.3f}\n'.format(entity_type, *self.get_stats_by_type(entity_type)))
+            buf.write('  {} P: {:.3f}  R: {:.3f}  F1: {:.3f}  {}\n'.format(
+                entity_type, *self.get_stats_by_type(entity_type), self.num_mentions_with_links[entity_type]))
         return buf.getvalue()
 
 

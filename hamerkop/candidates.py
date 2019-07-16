@@ -66,7 +66,9 @@ class CandidatesReport:
         buf.write('--------------------\n')
         buf.write('R: {:.3f}\n'.format(self.recall))
         for entity_type in EntityType.TYPES:
-            buf.write('  {} R: {:.3f}\n'.format(entity_type, self.get_recall_by_type(entity_type)))
+            # TYPE R: PERCENT GT_COUNT
+            buf.write('  {} R: {:.3f}  {}\n'.format(
+                entity_type, self.get_recall_by_type(entity_type), self.num_mentions_with_links[entity_type]))
         return buf.getvalue()
 
 
