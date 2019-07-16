@@ -18,23 +18,23 @@ def tokenize(string):
 
 class LangTest(unittest.TestCase):
     def test_from_code(self):
-        self.assertEqual(Lang.AM, Lang.from_code('AM'))
-        self.assertEqual(Lang.AM, Lang.from_code('am'))
+        self.assertEqual(Lang.AMH, Lang.from_code('AMH'))
+        self.assertEqual(Lang.AMH, Lang.from_code('amh'))
 
     def test_from_code_invalid(self):
-        self.assertIsNone(Lang.from_code('ZZ'))
+        self.assertIsNone(Lang.from_code('ZZZ'))
 
 
 class NgramLangDetectorTest(unittest.TestCase):
     DATA = {
-        Lang.EN: tokenize(read_file(get_filename('data/lang_id/en.txt'))),
-        Lang.ZH: tokenize(read_file(get_filename('data/lang_id/zh.txt'))),
+        Lang.ENG: tokenize(read_file(get_filename('data/lang_id/en.txt'))),
+        Lang.ZHO: tokenize(read_file(get_filename('data/lang_id/zh.txt'))),
     }
 
     def test(self):
         detector = NgramLangDetector()
-        self.assertEqual(Lang.EN, detector.detect('file1', self.DATA[Lang.EN]))
-        self.assertEqual(Lang.ZH, detector.detect('file2', self.DATA[Lang.ZH]))
+        self.assertEqual(Lang.ENG, detector.detect('file1', self.DATA[Lang.ENG]))
+        self.assertEqual(Lang.ZHO, detector.detect('file2', self.DATA[Lang.ZHO]))
 
     def test_without_data(self):
         detector = NgramLangDetector()

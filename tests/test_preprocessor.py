@@ -36,7 +36,7 @@ class PreprocessorReporterTest(unittest.TestCase):
             Mention('Leo Tolstoy', '_NW_doc34', (1, 3), (), EntityType.PER),
             Mention('Leo Tolstoy writes long novels', '_NW_doc34', (1, 3), (), EntityType.PER)
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
 
 
@@ -50,7 +50,7 @@ class CascadePreprocessorTest(unittest.TestCase):
             Mention('Leo Tolstoy', '_NW_doc34', (1, 3), (), EntityType.PER),
             Mention('Leo Tolstoy writes long novels', '_NW_doc34', (1, 3), (), EntityType.PER)
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual(2, len(document.mentions))
         self.assertNotIn(mentions[1], document.mentions)
@@ -65,7 +65,7 @@ class TypeValidatorTest(unittest.TestCase):
             Mention('Saʼud Arabiyaa', '_NW_doc34', (1, 3), (), 'BGE'),
             Mention('Edward', '_NW_doc34', (1, 3), (), EntityType.PER),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual(2, len(document.mentions))
 
@@ -76,7 +76,7 @@ class TextNormalizerTest(unittest.TestCase):
         mentions = [
             Mention('bw’Uburayi', '_NW_doc34', (1, 3), (), EntityType.GPE),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual(1, len(document.mentions))
         self.assertEqual("bw'Uburayi", document.mentions[0].string)
@@ -91,7 +91,7 @@ class GarbageRemoverTest(unittest.TestCase):
             Mention('http://www.google.com', '_NW_doc34', (1, 3), (), EntityType.PER),
             Mention('Leo Tolstoy', '_NW_doc34', (1, 3), (), EntityType.PER)
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual(3, len(document.mentions))
         self.assertNotIn(mentions[2], document.mentions)
@@ -103,7 +103,7 @@ class FixTypeTest(unittest.TestCase):
         mentions = [
             Mention('Africa', '_NW_doc34', (1, 3), (), EntityType.GPE),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual(1, len(document.mentions))
         self.assertEqual(EntityType.LOC, document.mentions[0].type)
@@ -116,7 +116,7 @@ class TooLongMentionRemoverTest(unittest.TestCase):
             Mention('Henry J. Adams', '_NW_doc34', (1, 3), (), EntityType.PER),
             Mention('Henry Adams eats mice', '_NW_doc34', (1, 3), (), EntityType.PER)
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual(1, len(document.mentions))
         self.assertEqual('Henry J. Adams', document.mentions[0].string)
@@ -130,7 +130,7 @@ class BlacklistTest(unittest.TestCase):
             Mention('Bulgaria', '_NW_doc34', (1, 3), (), EntityType.PER),
             Mention('Leo Tolstoy', '_NW_doc34', (1, 3), (), EntityType.PER)
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual(2, len(document.mentions))
         self.assertNotIn(mentions[1], document.mentions)
@@ -143,7 +143,7 @@ class AcronymReplacerTest(unittest.TestCase):
             Mention('UN', 'IL5_NW_doc34', (1, 3), (), EntityType.GPE),
             Mention('un', 'IL5_NW_doc34', (4, 5), (), EntityType.GPE),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual(2, len(document.mentions))
         self.assertEqual('United Nations', document.mentions[0].string)
@@ -155,7 +155,7 @@ class AcronymReplacerTest(unittest.TestCase):
             Mention('UN', 'IL5_NW_doc34', (1, 3), (), EntityType.GPE),
             Mention('un', 'IL5_NW_doc34', (4, 5), (), EntityType.GPE),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual(2, len(document.mentions))
         self.assertEqual('United Nations', document.mentions[0].string)
@@ -170,7 +170,7 @@ class NameProjectorTest(unittest.TestCase):
             Mention('Bodensee', '_NW_doc34', (1, 3), (), EntityType.GPE),
             Mention('Bulgaria', '_NW_doc34', (1, 3), (), EntityType.GPE),
         ]
-        document = Document(mentions, [], Lang.DE)
+        document = Document(mentions, [], Lang.DEU)
         processor.process(document)
         self.assertEqual('Bodensee', mentions[0].string)
         self.assertEqual('Lake Constance', mentions[0].translate_string)
@@ -186,7 +186,7 @@ class NameStemmerTest(unittest.TestCase):
             Mention('Kölner Dom', '_NW_doc34', (1, 3), (), EntityType.LOC),
             Mention('Rheinenergiestadion', '_NW_doc34', (1, 3), (), EntityType.LOC),
         ]
-        document = Document(mentions, [], Lang.DE)
+        document = Document(mentions, [], Lang.DEU)
         processor.process(document)
         self.assertEqual('köln Dom', mentions[0].string)
         self.assertEqual('Rheinenergiestadion', mentions[1].string)
@@ -207,7 +207,7 @@ class TwitterUsernameReplacerTest(unittest.TestCase):
             Mention('Leo Tolstoy writes long novels', 'IL5_SN_doc34', (1, 3), (), EntityType.PER),
             Mention('@', 'IL5_SN_doc34', (1, 3), (), EntityType.PER),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual(6, len(document.mentions))
         self.assertEqual('Barney Rubble', document.mentions[0].string)
@@ -220,7 +220,7 @@ class TwitterHashtagProcessorTest(unittest.TestCase):
         mentions = [
             Mention('#HashTag', 'IL5_SN_doc34', (1, 3), (), EntityType.GPE),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual('Hash Tag', document.mentions[0].string)
 
@@ -229,7 +229,7 @@ class TwitterHashtagProcessorTest(unittest.TestCase):
         mentions = [
             Mention('#', 'IL5_SN_doc34', (1, 3), (), EntityType.GPE),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual('', document.mentions[0].string)
 
@@ -238,7 +238,7 @@ class TwitterHashtagProcessorTest(unittest.TestCase):
         mentions = [
             Mention('#Football4Ever', 'IL5_SN_doc34', (1, 3), (), EntityType.GPE),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual('Football Ever', document.mentions[0].string)
 
@@ -247,7 +247,7 @@ class TwitterHashtagProcessorTest(unittest.TestCase):
         mentions = [
             Mention('#egyptian', 'IL5_SN_doc34', (1, 3), (), EntityType.GPE),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual('egyptian', document.mentions[0].string)
 
@@ -256,7 +256,7 @@ class TwitterHashtagProcessorTest(unittest.TestCase):
         mentions = [
             Mention('#egyptianFun', 'IL5_SN_doc34', (1, 3), (), EntityType.GPE),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual('egyptian Fun', document.mentions[0].string)
 
@@ -265,7 +265,7 @@ class TwitterHashtagProcessorTest(unittest.TestCase):
         mentions = [
             Mention('#…', 'IL5_SN_doc34', (1, 3), (), EntityType.GPE),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual('…', document.mentions[0].string)
 
@@ -274,6 +274,6 @@ class TwitterHashtagProcessorTest(unittest.TestCase):
         mentions = [
             Mention('#Ethiopia|n', 'IL5_SN_doc34', (1, 3), (), EntityType.GPE),
         ]
-        document = Document(mentions, [], Lang.EN)
+        document = Document(mentions, [], Lang.ENG)
         processor.process(document)
         self.assertEqual('Ethiopia n', document.mentions[0].string)

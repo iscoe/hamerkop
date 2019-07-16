@@ -34,7 +34,7 @@ class ReadCoNLLTest(unittest.TestCase):
 
 class DocumentPreparerTest(unittest.TestCase):
     def test_with_consecutive_b_tags(self):
-        preparer = DocumentPreparer(InProcessIncremental(), FixedLang(Lang.EN))
+        preparer = DocumentPreparer(InProcessIncremental(), FixedLang(Lang.ENG))
         rows = [
             Row('George', 'B-PER', '_NW_doc1', (0, 6)),
             Row('Tony', 'B-PER', '_NW_doc1', (8, 12)),
@@ -56,7 +56,7 @@ class DocumentPreparerTest(unittest.TestCase):
         self.assertEqual(EntityType.PER, doc.mentions[1].type)
 
     def test_with_ending_i_tag(self):
-        preparer = DocumentPreparer(InProcessIncremental(), FixedLang(Lang.EN))
+        preparer = DocumentPreparer(InProcessIncremental(), FixedLang(Lang.ENG))
         rows = [
             Row('Here', 'O', '_NW_doc1', (0, 4)),
             Row('are', 'O', '_NW_doc1', (5, 8)),
@@ -74,7 +74,7 @@ class DocumentPreparerTest(unittest.TestCase):
                          ' '.join(doc.tokens[doc.mentions[0].token_offsets[0]:doc.mentions[0].token_offsets[1]]))
 
     def test_with_no_tags(self):
-        preparer = DocumentPreparer(InProcessIncremental(), FixedLang(Lang.EN))
+        preparer = DocumentPreparer(InProcessIncremental(), FixedLang(Lang.ENG))
         rows = [
             Row('Here', 'O', '_NW_doc1', (0, 4)),
             Row('are', 'O', '_NW_doc1', (5, 8)),
@@ -115,7 +115,7 @@ class OutputWriterTest(unittest.TestCase):
         ]
         chains[0].entity = Entity('67', EntityType.PER, 'Henry', EntityOrigin.WLL)
         chains[1].entity = None
-        doc = Document(chains[0].mentions + chains[1].mentions, [], Lang.EN)
+        doc = Document(chains[0].mentions + chains[1].mentions, [], Lang.ENG)
         doc.mention_chains = chains
 
         buffer = io.StringIO()

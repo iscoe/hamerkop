@@ -64,7 +64,7 @@ class DictTranslatorTest(unittest.TestCase):
         ]
         translator = DictTranslator(mapping)
         for test_case in test_cases:
-            self.assertEqual(test_case.expect, translator.translate(test_case.input, Lang.DE))
+            self.assertEqual(test_case.expect, translator.translate(test_case.input, Lang.DEU))
 
 
 class DictStemmerTest(unittest.TestCase):
@@ -78,4 +78,4 @@ class DictStemmerTest(unittest.TestCase):
         ]
         stemmer = DictStemmer(mapping)
         for test_case in test_cases:
-            self.assertEqual(test_case.expect, stemmer.stem(test_case.input, Lang.DE))
+            self.assertEqual(test_case.expect, stemmer.stem(test_case.input, Lang.DEU))

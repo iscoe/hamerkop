@@ -6,201 +6,390 @@ import abc
 import enum
 import langdetect
 
+# ISO 639-1 to 639-3 mapping
+ISO_MAPPING = {
+    'ab': 'abk',
+    'aa': 'aar',
+    'af': 'afr',
+    'ak': 'aka',
+    'sq': 'sqi',
+    'am': 'amh',
+    'ar': 'ara',
+    'an': 'arg',
+    'hy': 'hye',
+    'as': 'asm',
+    'av': 'ava',
+    'ae': 'ave',
+    'ay': 'aym',
+    'az': 'aze',
+    'bm': 'bam',
+    'ba': 'bak',
+    'eu': 'eus',
+    'be': 'bel',
+    'bn': 'ben',
+    'bh': 'bih',
+    'bi': 'bis',
+    'bs': 'bos',
+    'br': 'bre',
+    'bg': 'bul',
+    'my': 'mya',
+    'ca': 'cat',
+    'ch': 'cha',
+    'ce': 'che',
+    'ny': 'nya',
+    'zh': 'zho',
+    'cv': 'chv',
+    'kw': 'cor',
+    'co': 'cos',
+    'cr': 'cre',
+    'hr': 'hrv',
+    'cs': 'ces',
+    'da': 'dan',
+    'dv': 'div',
+    'nl': 'nld',
+    'dz': 'dzo',
+    'en': 'eng',
+    'eo': 'epo',
+    'et': 'est',
+    'ee': 'ewe',
+    'fo': 'fao',
+    'fj': 'fij',
+    'fi': 'fin',
+    'fr': 'fra',
+    'ff': 'ful',
+    'gl': 'glg',
+    'ka': 'kat',
+    'de': 'deu',
+    'el': 'ell',
+    'gn': 'grn',
+    'gu': 'guj',
+    'ht': 'hat',
+    'ha': 'hau',
+    'he': 'heb',
+    'hz': 'her',
+    'hi': 'hin',
+    'ho': 'hmo',
+    'hu': 'hun',
+    'ia': 'ina',
+    'id': 'ind',
+    'ie': 'ile',
+    'ga': 'gle',
+    'ig': 'ibo',
+    'ik': 'ipk',
+    'io': 'ido',
+    'is': 'isl',
+    'it': 'ita',
+    'iu': 'iku',
+    'ja': 'jpn',
+    'jv': 'jav',
+    'kl': 'kal',
+    'kn': 'kan',
+    'kr': 'kau',
+    'ks': 'kas',
+    'kk': 'kaz',
+    'km': 'khm',
+    'ki': 'kik',
+    'rw': 'kin',
+    'ky': 'kir',
+    'kv': 'kom',
+    'kg': 'kon',
+    'ko': 'kor',
+    'ku': 'kur',
+    'kj': 'kua',
+    'la': 'lat',
+    'lb': 'ltz',
+    'lg': 'lug',
+    'li': 'lim',
+    'ln': 'lin',
+    'lo': 'lao',
+    'lt': 'lit',
+    'lu': 'lub',
+    'lv': 'lav',
+    'gv': 'glv',
+    'mk': 'mkd',
+    'mg': 'mlg',
+    'ms': 'msa',
+    'ml': 'mal',
+    'mt': 'mlt',
+    'mi': 'mri',
+    'mr': 'mar',
+    'mh': 'mah',
+    'mn': 'mon',
+    'na': 'nau',
+    'nv': 'nav',
+    'nb': 'nob',
+    'nd': 'nde',
+    'ne': 'nep',
+    'ng': 'ndo',
+    'nn': 'nno',
+    'no': 'nor',
+    'ii': 'iii',
+    'nr': 'nbl',
+    'oc': 'oci',
+    'oj': 'oji',
+    'cu': 'chu',
+    'om': 'orm',
+    'or': 'ori',
+    'os': 'oss',
+    'pa': 'pan',
+    'pi': 'pli',
+    'fa': 'fas',
+    'pl': 'pol',
+    'ps': 'pus',
+    'pt': 'por',
+    'qu': 'que',
+    'rm': 'roh',
+    'rn': 'run',
+    'ro': 'ron',
+    'ru': 'rus',
+    'sa': 'san',
+    'sc': 'srd',
+    'sd': 'snd',
+    'se': 'sme',
+    'sm': 'smo',
+    'sg': 'sag',
+    'sr': 'srp',
+    'gd': 'gla',
+    'sn': 'sna',
+    'si': 'sin',
+    'sk': 'slk',
+    'sl': 'slv',
+    'so': 'som',
+    'st': 'sot',
+    'es': 'spa',
+    'su': 'sun',
+    'sw': 'swa',
+    'ss': 'ssw',
+    'sv': 'swe',
+    'ta': 'tam',
+    'te': 'tel',
+    'tg': 'tgk',
+    'th': 'tha',
+    'ti': 'tir',
+    'bo': 'bod',
+    'tk': 'tuk',
+    'tl': 'tgl',
+    'tn': 'tsn',
+    'to': 'ton',
+    'tr': 'tur',
+    'ts': 'tso',
+    'tt': 'tat',
+    'tw': 'twi',
+    'ty': 'tah',
+    'ug': 'uig',
+    'uk': 'ukr',
+    'ur': 'urd',
+    'uz': 'uzb',
+    've': 'ven',
+    'vi': 'vie',
+    'vo': 'vol',
+    'wa': 'wln',
+    'cy': 'cym',
+    'wo': 'wol',
+    'fy': 'fry',
+    'xh': 'xho',
+    'yi': 'yid',
+    'yo': 'yor',
+    'za': 'zha',
+    'zu': 'zul',
+}
+
 
 class Lang(enum.Enum):
     """
     Language enumeration
 
-    ISO 639-1 language codes
+    ISO 639-3 language codes
     """
-
-    AB = 'Abkhaz'
-    AA = 'Afar'
-    AF = 'Afrikaans'
-    AK = 'Akan'
-    SQ = 'Albanian'
-    AM = 'Amharic'
-    AR = 'Arabic'
-    AN = 'Aragonese'
-    HY = 'Armenian'
-    AS = 'Assamese'
-    AV = 'Avaric'
-    AE = 'Avestan'
-    AY = 'Aymara'
-    AZ = 'Azerbaijani'
-    BM = 'Bambara'
-    BA = 'Bashkir'
-    EU = 'Basque'
-    BE = 'Belarusian'
-    BN = 'Bengali'
-    BH = 'Bihari'
-    BI = 'Bislama'
-    BS = 'Bosnian'
-    BR = 'Breton'
-    BG = 'Bulgarian'
-    MY = 'Burmese'
-    CA = 'Catalan'
-    CH = 'Chamorro'
-    CE = 'Chechen'
-    NY = 'Chichewa; Chewa; Nyanja'
-    ZH = 'Chinese'
-    CV = 'Chuvash'
-    KW = 'Cornish'
-    CO = 'Corsican'
-    CR = 'Cree'
-    HR = 'Croatian'
-    CS = 'Czech'
-    DA = 'Danish'
-    DV = 'Maldivian;'
-    NL = 'Dutch'
-    DZ = 'Dzongkha'
-    EN = 'English'
-    EO = 'Esperanto'
-    ET = 'Estonian'
-    EE = 'Ewe'
-    FO = 'Faroese'
-    FJ = 'Fijian'
-    FI = 'Finnish'
-    FR = 'French'
-    FF = 'Fula'
-    GL = 'Galician'
-    KA = 'Georgian'
-    DE = 'German'
-    EL = 'Greek: Modern'
-    GN = 'Guaraní'
-    GU = 'Gujarati'
-    HT = 'Haitian'
-    HA = 'Hausa'
-    HE = 'Hebrew'
-    HZ = 'Herero'
-    HI = 'Hindi'
-    HO = 'Hiri Motu'
-    HU = 'Hungarian'
-    IA = 'Interlingua'
-    ID = 'Indonesian'
-    IE = 'Interlingue'
-    GA = 'Irish'
-    IG = 'Igbo'
-    IK = 'Inupiaq'
-    IO = 'Ido'
-    IS = 'Icelandic'
-    IT = 'Italian'
-    IU = 'Inuktitut'
-    JA = 'Japanese'
-    JV = 'Javanese'
-    KL = 'Kalaallisut'
-    KN = 'Kannada'
-    KR = 'Kanuri'
-    KS = 'Kashmiri'
-    KK = 'Kazakh'
-    KM = 'Khmer'
-    KI = 'Kikuyu: Gikuyu'
-    RW = 'Kinyarwanda'
-    KY = 'Kyrgyz'
-    KV = 'Komi'
-    KG = 'Kongo'
-    KO = 'Korean'
-    KU = 'Kurdish'
-    KJ = 'Kwanyama'
-    LA = 'Latin'
-    LB = 'Luxembourgish'
-    LG = 'Luganda'
-    LI = 'Limburgish'
-    LN = 'Lingala'
-    LO = 'Lao'
-    LT = 'Lithuanian'
-    LU = 'Luba-Katanga'
-    LV = 'Latvian'
-    GV = 'Manx'
-    MK = 'Macedonian'
-    MG = 'Malagasy'
-    MS = 'Malay'
-    ML = 'Malayalam'
-    MT = 'Maltese'
-    MI = 'Māori'
-    MR = 'Marathi'
-    MH = 'Marshallese'
-    MN = 'Mongolian'
-    NA = 'Nauru'
-    NV = 'Navajo'
-    NB = 'Norwegian Bokmål'
-    ND = 'North Ndebele'
-    NE = 'Nepali'
-    NG = 'Ndonga'
-    NN = 'Norwegian Nynorsk'
-    NO = 'Norwegian'
-    II = 'Nuosu'
-    NR = 'South Ndebele'
-    OC = 'Occitan'
-    OJ = 'Ojibwe'
-    CU = 'Old Church Slavonic'
-    OM = 'Oromo'
-    OR = 'Oriya'
-    OS = 'Ossetian: Ossetic'
-    PA = 'Panjabi: Punjabi'
-    PI = 'Pāli'
-    FA = 'Persian'
-    PL = 'Polish'
-    PS = 'Pashto'
-    PT = 'Portuguese'
-    QU = 'Quechua'
-    RM = 'Romansh'
-    RN = 'Kirundi'
-    RO = 'Romanian'
-    RU = 'Russian'
-    SA = 'Sanskrit'
-    SC = 'Sardinian'
-    SD = 'Sindhi'
-    SE = 'Northern Sami'
-    SM = 'Samoan'
-    SG = 'Sango'
-    SR = 'Serbian'
-    GD = 'Scottish Gaelic'
-    SN = 'Shona'
-    SI = 'Sinhala'
-    SK = 'Slovak'
-    SL = 'Slovene'
-    SO = 'Somali'
-    ST = 'Southern Sotho'
-    ES = 'Spanish'
-    SU = 'Sundanese'
-    SW = 'Swahili'
-    SS = 'Swati'
-    SV = 'Swedish'
-    TA = 'Tamil'
-    TE = 'Telugu'
-    TG = 'Tajik'
-    TH = 'Thai'
-    TI = 'Tigrinya'
-    BO = 'Tibetan'
-    TK = 'Turkmen'
-    TL = 'Tagalog'
-    TN = 'Tswana'
-    TO = 'Tonga'
-    TR = 'Turkish'
-    TS = 'Tsonga'
-    TT = 'Tatar'
-    TW = 'Twi'
-    TY = 'Tahitian'
-    UG = 'Uyghur'
-    UK = 'Ukrainian'
-    UR = 'Urdu'
-    UZ = 'Uzbek'
-    VE = 'Venda'
-    VI = 'Vietnamese'
-    VO = 'Volapük'
-    WA = 'Walloon'
-    CY = 'Welsh'
-    WO = 'Wolof'
-    FY = 'Western Frisian'
-    XH = 'Xhosa'
-    YI = 'Yiddish'
-    YO = 'Yoruba'
-    ZA = 'Zhuang'
-    ZU = 'Zulu'
+    ABK = 'Abkhaz'
+    AAR = 'Afar'
+    AFR = 'Afrikaans'
+    AKA = 'Akan'
+    SQI = 'Albanian'
+    AMH = 'Amharic'
+    ARA = 'Arabic'
+    ARG = 'Aragonese'
+    HYE = 'Armenian'
+    ASM = 'Assamese'
+    AVA = 'Avaric'
+    AVE = 'Avestan'
+    AYM = 'Aymara'
+    AZE = 'Azerbaijani'
+    BAM = 'Bambara'
+    BAK = 'Bashkir'
+    EUS = 'Basque'
+    BEL = 'Belarusian'
+    BEN = 'Bengali'
+    BIH = 'Bihari'
+    BIS = 'Bislama'
+    BOS = 'Bosnian'
+    BRE = 'Breton'
+    BUL = 'Bulgarian'
+    MYA = 'Burmese'
+    CAT = 'Catalan'
+    CHA = 'Chamorro'
+    CHE = 'Chechen'
+    NYA = 'Chichewa'
+    ZHO = 'Chinese'
+    CHV = 'Chuvash'
+    COR = 'Cornish'
+    COS = 'Corsican'
+    CRE = 'Cree'
+    HRV = 'Croatian'
+    CES = 'Czech'
+    DAN = 'Danish'
+    DIV = 'Maldivian;'
+    NLD = 'Dutch'
+    DZO = 'Dzongkha'
+    ENG = 'English'
+    EPO = 'Esperanto'
+    EST = 'Estonian'
+    EWE = 'Ewe'
+    FAO = 'Faroese'
+    FIJ = 'Fijian'
+    FIN = 'Finnish'
+    FRA = 'French'
+    FUL = 'Fula'
+    GLG = 'Galician'
+    KAT = 'Georgian'
+    DEU = 'German'
+    ELL = 'Greek'
+    GRN = 'Guaraní'
+    GUJ = 'Gujarati'
+    HAT = 'Haitian'
+    HAU = 'Hausa'
+    HEB = 'Hebrew'
+    HER = 'Herero'
+    HIN = 'Hindi'
+    HMO = 'Hiri Motu'
+    HUN = 'Hungarian'
+    INA = 'Interlingua'
+    IND = 'Indonesian'
+    ILE = 'Interlingue'
+    GLE = 'Irish'
+    IBO = 'Igbo'
+    IPK = 'Inupiaq'
+    IDO = 'Ido'
+    ISL = 'Icelandic'
+    ITA = 'Italian'
+    IKU = 'Inuktitut'
+    JPN = 'Japanese'
+    JAV = 'Javanese'
+    KAL = 'Kalaallisut'
+    KAN = 'Kannada'
+    KAU = 'Kanuri'
+    KAS = 'Kashmiri'
+    KAZ = 'Kazakh'
+    KHM = 'Khmer'
+    KIK = 'Kikuyu'
+    KIN = 'Kinyarwanda'
+    KIR = 'Kyrgyz'
+    KOM = 'Komi'
+    KON = 'Kongo'
+    KOR = 'Korean'
+    KUR = 'Kurdish'
+    KUA = 'Kwanyama'
+    LAT = 'Latin'
+    LTZ = 'Luxembourgish'
+    LUG = 'Luganda'
+    LIM = 'Limburgish'
+    LIN = 'Lingala'
+    LAO = 'Lao'
+    LIT = 'Lithuanian'
+    LUB = 'Luba-Katanga'
+    LAV = 'Latvian'
+    GLV = 'Manx'
+    MKD = 'Macedonian'
+    MLG = 'Malagasy'
+    MSA = 'Malay'
+    MAL = 'Malayalam'
+    MLT = 'Maltese'
+    MRI = 'Māori'
+    MAR = 'Marathi'
+    MAH = 'Marshallese'
+    MON = 'Mongolian'
+    NAU = 'Nauru'
+    NAV = 'Navajo'
+    NOB = 'Norwegian Bokmål'
+    NDE = 'North Ndebele'
+    NEP = 'Nepali'
+    NDO = 'Ndonga'
+    NNO = 'Norwegian Nynorsk'
+    NOR = 'Norwegian'
+    III = 'Nuosu'
+    NBL = 'South Ndebele'
+    OCI = 'Occitan'
+    OJI = 'Ojibwe'
+    CHU = 'Old Church Slavonic'
+    ORM = 'Oromo'
+    ORI = 'Oriya'
+    OSS = 'Ossetian'
+    PAN = 'Panjabi'
+    PLI = 'Pāli'
+    FAS = 'Persian'
+    POL = 'Polish'
+    PUS = 'Pashto'
+    POR = 'Portuguese'
+    QUE = 'Quechua'
+    ROH = 'Romansh'
+    RUN = 'Kirundi'
+    RON = 'Romanian'
+    RUS = 'Russian'
+    SAN = 'Sanskrit'
+    SRD = 'Sardinian'
+    SND = 'Sindhi'
+    SME = 'Northern Sami'
+    SMO = 'Samoan'
+    SAG = 'Sango'
+    SRP = 'Serbian'
+    GLA = 'Scottish Gaelic'
+    SNA = 'Shona'
+    SIN = 'Sinhala'
+    SLK = 'Slovak'
+    SLV = 'Slovene'
+    SOM = 'Somali'
+    SOT = 'Southern Sotho'
+    SPA = 'Spanish'
+    SUN = 'Sundanese'
+    SWA = 'Swahili'
+    SSW = 'Swati'
+    SWE = 'Swedish'
+    TAM = 'Tamil'
+    TEL = 'Telugu'
+    TGK = 'Tajik'
+    THA = 'Thai'
+    TIR = 'Tigrinya'
+    BOD = 'Tibetan'
+    TUK = 'Turkmen'
+    TGL = 'Tagalog'
+    TSN = 'Tswana'
+    TON = 'Tonga'
+    TUR = 'Turkish'
+    TSO = 'Tsonga'
+    TAT = 'Tatar'
+    TWI = 'Twi'
+    TAH = 'Tahitian'
+    UIG = 'Uyghur'
+    UKR = 'Ukrainian'
+    URD = 'Urdu'
+    UZB = 'Uzbek'
+    VEN = 'Venda'
+    VIE = 'Vietnamese'
+    VOL = 'Volapük'
+    WLN = 'Walloon'
+    CYM = 'Welsh'
+    WOL = 'Wolof'
+    FRY = 'Western Frisian'
+    XHO = 'Xhosa'
+    YID = 'Yiddish'
+    YOR = 'Yoruba'
+    ZHA = 'Zhuang'
+    ZUL = 'Zulu'
 
     @classmethod
     def from_code(cls, code):
+        if code.lower() in ISO_MAPPING:
+            code = ISO_MAPPING[code.lower()]
         try:
             return getattr(cls, code.upper())
         except AttributeError:

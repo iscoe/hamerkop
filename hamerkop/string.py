@@ -112,7 +112,7 @@ class URoman(Translator):
         self.uroman_path = uroman_path
 
     def translate(self, s, lang):
-        if lang == Lang.EN:
+        if lang == Lang.ENG:
             return
         # ascii strings do not need transliteration
         if all(ord(char) < 128 for char in s):
