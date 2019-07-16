@@ -606,7 +606,7 @@ class ScriptBasedNameFilter:
     }
 
     def __init__(self, *scripts):
-        self.scripts = scripts
+        self.scripts = [x.lower() for x in scripts]
 
     def filter(self, name):
         s = String.replace_unicode_punct(name)
