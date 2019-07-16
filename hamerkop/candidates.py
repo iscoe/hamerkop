@@ -40,11 +40,14 @@ class CandidatesReport:
     def __init__(self):
         self.num_mentions_with_links = collections.defaultdict(int)
         self.num_including_correct_entity = collections.defaultdict(int)
+        self.missing = collections.defaultdict(collections.Counter)
 
     def update(self, name, entity_type, correct):
         self.num_mentions_with_links[entity_type] += 1
         if correct:
             self.num_including_correct_entity[entity_type] += 1
+        else:
+            self.missing[entity_type].update({name: 1})
 
     @property
     def recall(self):
@@ -89,7 +92,7 @@ class CandidatesScorer:
                     if mention.offsets in doc_gt:
                         link = doc_gt[mention.offsets]
                         if link.link_type == LinkType.LINK:
-                            self.report.update(link.name, link.entity_type, set(link.links).intersection(set(candidates)))
+                            self.report.update(mention.string, link.entity_type, set(link.links).intersection(set(candidates)))
 
 
 class IndexBasedGenerator(CandidateGenerator):

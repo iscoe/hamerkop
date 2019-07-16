@@ -24,16 +24,23 @@ class ResolverReport:
         self.num_mentions_with_correct_candidate = collections.defaultdict(int)
         # precision denominator
         self.num_mentions_with_links = collections.defaultdict(int)
+        self.wrong_entity_links = collections.defaultdict(collections.Counter)
+        self.type_1_errors = collections.defaultdict(collections.Counter)
 
-    def update(self, name, entity_type, correct):
+    def update(self, name, entity_type, correct=None):
         """
         :param name: Mention name
         :param entity_type: Entity type
-        :param correct: Was the correct entity chosen
+        :param correct: Was the correct entity chosen if in candidate set (None means false alarm)
         """
-        self.num_mentions_with_correct_candidate[entity_type] += 1
-        if correct:
-            self.num_mentions_correct_entity[entity_type] += 1
+        if correct is not None:
+            self.num_mentions_with_correct_candidate[entity_type] += 1
+            if correct:
+                self.num_mentions_correct_entity[entity_type] += 1
+            else:
+                self.wrong_entity_links[entity_type].update({name: 1})
+        else:
+            self.type_1_errors[entity_type].update({name: 1})
 
     @property
     def precision(self):
@@ -120,7 +127,10 @@ class ResolverScorer:
                         if link.link_type == LinkType.LINK:
                             if set(link.links).intersection(set(candidates)):
                                 correct = chain.entity and chain.entity.id in link.links
-                                self.report.update(link.name, link.entity_type, correct)
+                                self.report.update(mention.string, link.entity_type, correct=correct)
+                        elif chain.entity:
+                            # mention has a selected candidate but is NIL in ground truth
+                            self.report.update(mention.string, mention.type)
 
 
 class Resolver(abc.ABC):
