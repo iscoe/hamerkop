@@ -31,8 +31,8 @@ class CandidatesScorerTest(unittest.TestCase):
         ]
         scorer = CandidatesScorer(gt)
         scorer.update(doc)
-        self.assertEqual(3, scorer.report.num_mentions_with_links)
-        self.assertEqual(2, scorer.report.num_including_correct_entity)
+        self.assertEqual(3, scorer.report.num_mentions_with_links[EntityType.PER])
+        self.assertEqual(2, scorer.report.num_including_correct_entity[EntityType.PER])
 
 
 class MockGenerator(CandidateGenerator):

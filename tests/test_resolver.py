@@ -38,8 +38,8 @@ class ResolverScorerTest(unittest.TestCase):
         doc.mention_chains[3].entity = doc.mention_chains[3].candidates[0]
         scorer = ResolverScorer(gt)
         scorer.update(doc)
-        self.assertEqual(2, scorer.report.num_mentions_with_correct_candidate)
-        self.assertEqual(1, scorer.report.num_mentions_correct_entity)
+        self.assertEqual(2, scorer.report.num_mentions_with_correct_candidate[EntityType.PER])
+        self.assertEqual(1, scorer.report.num_mentions_correct_entity[EntityType.PER])
 
 
 class CascadeResolverTest(unittest.TestCase):
