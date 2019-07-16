@@ -148,10 +148,11 @@ class URoman(Translator):
         # ascii strings do not need transliteration
         if all(ord(char) < 128 for char in s):
             return
-        ps = subprocess.Popen(('echo', s), stdout=subprocess.PIPE, universal_newlines=True)
+        ps = subprocess.Popen(('echo', '-n', s), stdout=subprocess.PIPE, universal_newlines=True)
         output = subprocess.check_output(self.uroman_path, stdin=ps.stdout, universal_newlines=True)
         ps.wait()
-        return output
+        # work around for uroman adding a newline
+        return output.strip()
 
 
 class Stemmer(abc.ABC):
