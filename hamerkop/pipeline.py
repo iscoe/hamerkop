@@ -118,6 +118,7 @@ class Pipeline:
         document_count = 0
         with self.report.time_report.main:
             for doc in self.documents:
+
                 # preprocessing
                 with self.report.time_report.preprocessing:
                     self.preprocessor.process(doc)
@@ -128,17 +129,41 @@ class Pipeline:
                 if self._scoring:
                     self._coref_scorer.update(doc)
 
+                mids = set()
+                for chain in doc.mention_chains:
+                    for mention in chain.mentions:
+                        if mention.id not in mids:
+                            mids.add(mention.id)
+                        else:
+                            print("Error after coref")
+
                 # candidate generation
                 with self.report.time_report.candidates:
                     self.candidate_gen.process(doc)
                 if self._scoring:
                     self._candidates_scorer.update(doc)
 
+                mids = set()
+                for chain in doc.mention_chains:
+                    for mention in chain.mentions:
+                        if mention.id not in mids:
+                            mids.add(mention.id)
+                        else:
+                            print("Error after cg")
+
                 # resolution
                 with self.report.time_report.resolver:
                     self.resolver.resolve(doc)
                 if self._scoring:
                     self._resolver_scorer.update(doc)
+
+                mids = set()
+                for chain in doc.mention_chains:
+                    for mention in chain.mentions:
+                        if mention.id not in mids:
+                            mids.add(mention.id)
+                        else:
+                            print("Error after res")
 
                 # update output file
                 self.writer.write(doc)
