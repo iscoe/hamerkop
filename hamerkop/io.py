@@ -599,10 +599,13 @@ class ScriptBasedNameFilter:
     GEEZ = "ge'ez"
     ARABIC = "arabic"
     SINHALA = "sinhala"
+    ODIA = "odia"
+
     REGEXES = {
         GEEZ: re.compile(r'^[\u1200-\u137F]+$'),  # does not include supplement or extended
         ARABIC: re.compile(r'^[\u0600-\u06FF]+$'),  # does not include supplement or extended
         SINHALA: re.compile(r'^[\u0D80-\u0DFF]+$'),
+        ODIA: re.compile(r'^[\u0B00-\u0B7F]+$'),
     }
 
     def __init__(self, *scripts):
