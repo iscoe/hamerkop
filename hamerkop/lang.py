@@ -268,7 +268,7 @@ class Lang(enum.Enum):
     ILE = 'Interlingue'
     GLE = 'Irish'
     IBO = 'Igbo'
-    ICO = 'Ilocano'
+    ILO = 'Ilocano'
     IPK = 'Inupiaq'
     IDO = 'Ido'
     ISL = 'Icelandic'
