@@ -206,6 +206,18 @@ class MentionChain:
     def names(self):
         return {x.string for x in self.mentions}
 
+    def get_translit_string(self):
+        if self.mentions[0].translit_string is not None:
+            return self.mentions[0].translit_string
+        else:
+            return None
+
+    def get_translate_string(self):
+        if self.mentions[0].translate_string is not None:
+            return self.mentions[0].translate_string
+        else:
+            return None
+
     @property
     def type(self):
         return self.mentions[0].type

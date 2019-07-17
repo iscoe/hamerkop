@@ -113,6 +113,27 @@ class IndexBasedGenerator(CandidateGenerator):
         return candidates
 
 
+class TranslitIndexBasedGenerator(CandidateGenerator):
+    """
+    Use a NameIndex to find candidates for entity linking.
+
+    Only uses the "best" name from the mention chain.
+    """
+    def __init__(self, index, maximum=25):
+        self.index = index
+        self.max = maximum
+
+    def find(self, mention_chain):
+        name = mention_chain.get_translit_string()
+        if name:
+            candidates = self.index.find(name, mention_chain.type, self.max)
+            logger.debug("{}({}): {} candidates from {}".format(
+                name, mention_chain.type, len(candidates), type(self.index).__name__))
+            return candidates
+        else:
+            return []
+
+
 class CombiningGenerator(CandidateGenerator):
     """
     Combines all candidates from its generators

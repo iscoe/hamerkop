@@ -38,7 +38,8 @@ from .preprocessor import Preprocessor, PreprocessorReporter, CascadePreprocesso
 from .coref import Coref, CascadeCoref, CorefStage, ExactMatchStage, AcronymStage, PersonLastNameStage
 
 # 3rd stage: candidate generation
-from .candidates import CandidateGenerator, IndexBasedGenerator, CombiningGenerator, CachingGenerator, CascadeGenerator
+from .candidates import CandidateGenerator, CombiningGenerator, CachingGenerator, CascadeGenerator, \
+    IndexBasedGenerator, TranslitIndexBasedGenerator
 
 # 4th stage: entity resolution
 from .resolver import Resolver, CascadeResolver, FirstResolver, ExactNameResolver, WikipediaResolver
