@@ -214,6 +214,10 @@ class ExactMatchStageTest(unittest.TestCase):
 
         self.assertEqual(3, len(doc.mention_chains))
         self.assertEqual(sorted([1, 1, 3]), sorted(list(map(len, doc.mention_chains))))
+        for chain in doc.mention_chains:
+            if chain.name.lower() == 'ed smith' and chain.type == EntityType.PER:
+                self.assertEqual({'Men1', 'Men2', 'Men4'}, {m.id for m in chain.mentions})
+                self.assertEqual({(141, 149), (146, 154), (186, 194)}, {m.offsets for m in chain.mentions})
 
 
 class AcronymStageTest(unittest.TestCase):
