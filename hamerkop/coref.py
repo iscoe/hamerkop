@@ -234,6 +234,35 @@ class CorefStage(abc.ABC):
         document.mention_chains = chains
 
 
+class LanguageSpecificStage(CorefStage):
+    """
+    Coref stage that only runs if doc is a particular language(s)
+    """
+    def __init__(self, stage, *langs):
+        self.stage = stage
+        self.langs = langs
+
+    def update(self, document):
+        if document.lang in self.langs:
+            self.stage.update(document)
+
+
+class TypeSpecificStage(CorefStage):
+    """
+    Coref stage that only runs if entity is a particular type(s)
+    """
+    def __init__(self, stage, *types):
+        self.stage = stage
+        self.types = types
+
+    def update(self, document):
+        other_chains = [x for x in document.mention_chains if x.type not in self.types]
+        chains = [x for x in document.mention_chains if x.type in self.types]
+        document.mention_chains = chains
+        self.stage.update(document)
+        document.mention_chains += other_chains
+
+
 class ExactMatchStage(CorefStage):
     """
     Mentions strings that are exact matches are chained (case insensitive)
@@ -306,37 +335,48 @@ class AcronymStage(CorefStage):
         return False
 
 
-class PersonLastNameStage(CorefStage):
+class SingleTokenMatchStage(CorefStage):
     """
-    Combine PER mentions where the full name and just the last name are used.
+    Combine mentions where a single token name matches a longer name string.
 
-    Does not handle multi-token last names.
-    If more than one person in a document referred to by last name, they get merged.
+    Specify the which token to match on to select between first name or last name for people.
+    Use this in combination with the TypeSpecificStage to restrict to people or other entity types.
+    Warning: this is very aggressive and will combine everyone that share the name token.
+    TODO: add check if more than one entity shares the token and reject if so.
     """
+    def __init__(self, index):
+        """
+        :param index: integer index into the tokenized name. 0 is first token and -1 is last token
+        """
+        self.index = index
+
     def update(self, document):
-        person_chains = [chain for chain in document.mention_chains if chain.type == EntityType.PER]
-        last_name_chains = {}
-        for chain in person_chains:
-            last_name = self._get_last_name(chain)
-            if last_name:
-                last_name_chains[chain] = last_name
-        for last_name_chain, last_name in last_name_chains.items():
-            matches = [chain for chain in person_chains if self._is_match(last_name, chain)]
+        single_token_name_chains = {}
+        for chain in document.mention_chains:
+            name = self._get_single_token_name(chain)
+            if name:
+                single_token_name_chains[chain] = name
+
+        for single_chain, single_name in single_token_name_chains.items():
+            matches = [chain for chain in document.mention_chains if self._is_match(single_name, single_chain, chain)]
             if matches:
-                matches.append(last_name_chain)
+                matches.append(single_chain)
                 self.merge(document, matches)
 
-    def _get_last_name(self, chain):
+    def _get_single_token_name(self, chain):
         for mention in chain.mentions:
             # only using the first single token in the chain
             if ' ' not in mention.string:
                 return mention.string
         return None
 
-    def _is_match(self, last_name, chain):
+    def _is_match(self, single_name, single_chain, chain):
+        if single_chain.type != chain.type:
+            return False
+
         for mention in chain.mentions:
             if ' ' in mention.string:
-                possible_last_name = mention.string.split()[-1]
-                if last_name.lower() == possible_last_name.lower():
+                possible_partial_name = mention.string.split()[self.index]
+                if single_name.lower() == possible_partial_name.lower():
                     return True
         return False

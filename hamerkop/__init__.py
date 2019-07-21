@@ -35,7 +35,8 @@ from .preprocessor import Preprocessor, PreprocessorReporter, CascadePreprocesso
     Blacklist, NameProjector, NameStemmer, AcronymReplacer
 
 # 2nd stage: in document coreference
-from .coref import Coref, CascadeCoref, CorefStage, ExactMatchStage, AcronymStage, PersonLastNameStage
+from .coref import Coref, CascadeCoref, CorefStage, LanguageSpecificStage, TypeSpecificStage, \
+    ExactMatchStage, AcronymStage, SingleTokenMatchStage
 
 # 3rd stage: candidate generation
 from .candidates import CandidateGenerator, CombiningGenerator, CachingGenerator, CascadeGenerator, \
