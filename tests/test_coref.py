@@ -171,13 +171,27 @@ class AcronymStageTest(unittest.TestCase):
         doc.mention_chains = [
             MentionChain([
                 Mention('South Carolina', '_DF_doc34', (141, 149), (22, 23), EntityType.GPE, 'Men1'),
-                Mention('south carolina', '_DF_doc34', (173, 181), (36, 37), EntityType.PER, 'Men3')
+                Mention('south carolina', '_DF_doc34', (173, 181), (36, 37), EntityType.GPE, 'Men3')
             ]),
             MentionChain([Mention('SC', '_DF_doc34', (146, 154), (24, 25), EntityType.GPE, 'Men2')]),
+            MentionChain([Mention('SC', '_DF_doc34', (146, 154), (24, 25), EntityType.ORG, 'Men6')]),
             MentionChain([
                 Mention('ed Smith', '_DF_doc34', (186, 194), (51, 52), EntityType.PER, 'Men4'),
-                Mention('Ed Smith', '_DF_doc34', (237, 245), (71, 72), EntityType.ORG, 'Men5')
+                Mention('Ed Smith', '_DF_doc34', (237, 245), (71, 72), EntityType.PER, 'Men5')
             ]),
+        ]
+        stage = AcronymStage(2)
+        stage.update(doc)
+        self.assertEqual(3, len(doc.mention_chains))
+        self.assertEqual({1, 2, 3}, {len(x.mentions) for x in doc.mention_chains})
+
+    def test_across_entity_type(self):
+        doc = unittest.mock.Mock()
+        doc.mention_chains = [
+            MentionChain([
+                Mention('South Carolina', '_DF_doc34', (141, 149), (22, 23), EntityType.GPE, 'Men1'),
+            ]),
+            MentionChain([Mention('SC', '_DF_doc34', (146, 154), (24, 25), EntityType.ORG, 'Men6')]),
         ]
         stage = AcronymStage(2)
         stage.update(doc)

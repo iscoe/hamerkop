@@ -259,8 +259,9 @@ class AcronymStage(CorefStage):
 
     This only works for scripts that support case.
     This does not handle words that are dropped like 'of'.
+    This works better after exact name match.
     This assumes that the acronym mentions have not been matched
-    with any other mentions (besides the same acronym string).
+      with any other mentions (besides the same acronym string).
     """
     def __init__(self, min_length):
         """
@@ -276,13 +277,19 @@ class AcronymStage(CorefStage):
             if acronym:
                 possible_acronyms[chain] = acronym
         for chain, acronym in possible_acronyms.items():
+            merged_chain = None
             for other_chain in chains:
-                if self._is_match(acronym, other_chain):
+                if chain.type == other_chain.type and self._is_match(acronym, other_chain):
                     self.merge(document, [chain, other_chain])
+                    merged_chain = other_chain
                     # only matching to first potential match.
                     # likely better to use token offset distance.
                     # also this assumes exact name matches have been chained already.
                     break
+            # we cannot let a chain merge separately to 2 separate chains as it duplicates the mentions.
+            # it would probably be better to update a list of merges and process them all at the end.
+            if merged_chain is not None:
+                chains.remove(merged_chain)
 
     def _get_acronym(self, chain):
         for mention in chain.mentions:
