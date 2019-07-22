@@ -20,6 +20,18 @@ class FeatureVectorTest(unittest.TestCase):
         v.add(97)
         self.assertEqual([True, 97], v.data)
 
+    def test_get(self):
+        v = FeatureVector()
+        v.add(True)
+        v.add(False)
+        v.add(17)
+        v.add(-1.2)
+        x = v.get()
+        self.assertEqual(1, x[0])
+        self.assertEqual(0, x[1])
+        self.assertEqual(17, x[2])
+        self.assertAlmostEqual(-1.2, x[3])
+
 
 class ExactMatchExtractorTest(unittest.TestCase):
     def test_match(self):

@@ -3,6 +3,7 @@
 # Distributed under the terms of the Apache 2.0 License.
 
 import abc
+import numpy as np
 
 from .utilities import CaseInsensitiveSet
 
@@ -16,6 +17,15 @@ class FeatureVector:
             self.data.extend(value)
         else:
             self.data.append(value)
+
+    def get(self):
+        v = np.zeros(len(self.data))
+        for index, value in enumerate(self.data):
+            if isinstance(value, bool):
+                v[index] = int(value)
+            else:
+                v[index] = value
+        return v
 
 
 class CorefFeatureExtractor(abc.ABC):

@@ -30,6 +30,9 @@ class CaseInsensitiveSet(collections.MutableSet):
     def discard(self, item):
         self._store.discard(item.lower())
 
+    def isdisjoint(self, other):
+        return self._store.isdisjoint(other._store)
+
     def __contains__(self, item):
         return item.lower() in self._store
 
