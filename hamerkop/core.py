@@ -207,14 +207,16 @@ class MentionChain:
         return {x.string for x in self.mentions}
 
     def get_translit_string(self):
-        if self.mentions[0].translit_string is not None:
-            return self.mentions[0].translit_string
+        translit_names = list(filter(None, [x.translit_string for x in self.mentions]))
+        if len(translit_names) > 0:
+            return max(translit_names, key=len)
         else:
             return None
 
     def get_translate_string(self):
-        if self.mentions[0].translate_string is not None:
-            return self.mentions[0].translate_string
+        translate_names = list(filter(None, [x.translate_string for x in self.mentions]))
+        if len(translate_names) > 0:
+            return max(translate_names, key=len)
         else:
             return None
 
