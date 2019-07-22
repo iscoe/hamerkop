@@ -50,7 +50,7 @@ class CoNLLReaderException(Exception):
 def read_conll(fp):
     """
     Generator that returns a list of Row tuples for each document
-    :param fp: handle to CoNLL tsv file with columns: token tag token docid start stop sentence
+    :param fp: handle to CoNLL tsv file with columns: token tag token doc_id start stop sentence
     :return: list of Row tuples
     """
     reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
@@ -68,7 +68,7 @@ def read_conll(fp):
     sent_id_index = 6
 
     rows = []
-    current_docid = None
+    current_doc_id = None
     for row in reader:
         if len(row) < 6:
             # sentence breaks are ignored
@@ -77,13 +77,13 @@ def read_conll(fp):
         if not row[tag_index]:
             raise RuntimeError("Bad conll format data: {}".format(row))
 
-        if current_docid is None:
-            current_docid = row[doc_id_index]
+        if current_doc_id is None:
+            current_doc_id = row[doc_id_index]
 
-        if row[doc_id_index] != current_docid:
+        if row[doc_id_index] != current_doc_id:
             yield rows
             rows = []
-            current_docid = row[doc_id_index]
+            current_doc_id = row[doc_id_index]
 
         start = int(row[offsets_indexes[0]])
         stop = int(row[offsets_indexes[1]])
@@ -137,7 +137,7 @@ class DocumentPreparer(object):
             mentions.append(self._extract(mention_rows, token_start))
 
         if mentions:
-            filename = mentions[0].docid
+            filename = mentions[0].doc_id
             lang = self.lang_detector.detect(filename, tokens)
             return Document(mentions, tokens, lang)
 
@@ -215,7 +215,7 @@ class DocumentPreparerUsingGroundTruth(object):
             token_index += 1
 
         if mentions:
-            filename = mentions[0].docid
+            filename = mentions[0].doc_id
             lang = self.lang_detector.detect(filename, tokens)
             return Document(mentions, tokens, lang)
 
@@ -225,13 +225,13 @@ class DocumentPreparerUsingGroundTruth(object):
         ch_start = first_row.offsets[0]
         ch_stop = first_row.offsets[1]
         token_stop = token_start + 1
-        docid = first_row.docid
+        doc_id = first_row.doc_id
         for row in rows:
             name = ' '.join((name, row.token))
             ch_stop = row.offsets[1]
             token_stop += 1
         token_offsets = (token_start, token_stop)
-        mention = Mention(name, docid, (ch_start, ch_stop), token_offsets, type)
+        mention = Mention(name, doc_id, (ch_start, ch_stop), token_offsets, type)
         self.id_assigner.assign(mention)
         return mention
 
@@ -281,7 +281,7 @@ class OutputWriter:
             else:
                 entity = chain.entity.id
             for mention in chain.mentions:
-                doc_info = "{}:{}-{}".format(mention.docid, *mention.offsets)
+                doc_info = "{}:{}-{}".format(mention.doc_id, *mention.offsets)
                 line = "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(
                     self.system, mention.id, mention.original_string, doc_info,
                     entity, mention.type, 'NAM', self.prob)

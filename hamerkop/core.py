@@ -152,7 +152,7 @@ class Mention:
     Entity Mention
     :string id: Unique mention id
     :string string: Mention string (maybe be normalized)
-    :string docid: Document id
+    :string doc_id: Document id
     :tuple offsets: Character offsets into the original document (1-based index, inclusive)
     :tuple token_offsets: Token offsets into the original document (0-based index, exclusive)
     :string type: Entity type. See EntityType.
@@ -160,11 +160,11 @@ class Mention:
     :string translit_string: Optional transliteration of the string
     :string translate_string: Optional translation of the string
     """
-    def __init__(self, string, docid, offsets, token_offsets, type, id=None):
+    def __init__(self, string, doc_id, offsets, token_offsets, type, id=None):
         # id is often assigned after creation
         self.id = id
         self.string = string
-        self.docid = docid
+        self.doc_id = doc_id
         self.offsets = offsets
         self.token_offsets = token_offsets
         self.type = type
@@ -250,7 +250,7 @@ class Document:
     Document with its tokens and entity mentions
     :list mentions: List of entity mentions
     :list tokens: List of tokens
-    :string docid: Doc ID of the original document
+    :string doc_id: Doc ID of the original document
     :string type: DocType
     :list mention_chains: List of MentionChain objects
     """
@@ -259,8 +259,8 @@ class Document:
         self.mentions = mentions
         self.tokens = tokens
         self.lang = lang
-        self.docid = self.mentions[0].docid
-        self.type = Document.detect_type(self.docid)
+        self.doc_id = self.mentions[0].doc_id
+        self.type = Document.detect_type(self.doc_id)
         self.mention_chains = None
 
     @staticmethod
@@ -268,4 +268,4 @@ class Document:
         return DocType.detect(doc_id)
 
     def __repr__(self):
-        return "Document({}) with {} mentions".format(self.docid, len(self.mentions))
+        return "Document({}) with {} mentions".format(self.doc_id, len(self.mentions))

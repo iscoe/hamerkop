@@ -60,8 +60,8 @@ class CandidatesScorer:
         self.report = CandidatesReport()
 
     def update(self, document):
-        if document.docid in self.gt:
-            doc_gt = self.gt[document.docid]
+        if document.doc_id in self.gt:
+            doc_gt = self.gt[document.doc_id]
             for chain in document.mention_chains:
                 candidates = [x.id for x in chain.candidates]
                 for mention in chain.mentions:

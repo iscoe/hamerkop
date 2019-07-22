@@ -113,8 +113,8 @@ class ResolverScorer:
         Incrementally update the scores
         :param document: Document with mention chains that have candidates and entity
         """
-        if document.docid in self.gt:
-            doc_gt = self.gt[document.docid]
+        if document.doc_id in self.gt:
+            doc_gt = self.gt[document.doc_id]
             for chain in document.mention_chains:
                 candidates = [x.id for x in chain.candidates]
                 for mention in chain.mentions:

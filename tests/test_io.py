@@ -50,8 +50,8 @@ class DocumentPreparerTest(unittest.TestCase):
                          ' '.join(doc.tokens[doc.mentions[0].token_offsets[0]:doc.mentions[0].token_offsets[1]]))
         self.assertEqual('Tony',
                          ' '.join(doc.tokens[doc.mentions[1].token_offsets[0]:doc.mentions[1].token_offsets[1]]))
-        self.assertEqual('_NW_doc1', doc.mentions[1].docid)
-        self.assertEqual('_NW_doc1', doc.docid)
+        self.assertEqual('_NW_doc1', doc.mentions[1].doc_id)
+        self.assertEqual('_NW_doc1', doc.doc_id)
         self.assertEqual((1, 2), doc.mentions[1].token_offsets)
         self.assertEqual(EntityType.PER, doc.mentions[1].type)
 
@@ -67,7 +67,7 @@ class DocumentPreparerTest(unittest.TestCase):
         doc = preparer.process(rows)
         self.assertEqual(1, len(doc.mentions))
         self.assertEqual(5, len(doc.tokens))
-        self.assertEqual('_NW_doc1', doc.docid)
+        self.assertEqual('_NW_doc1', doc.doc_id)
         self.assertEqual('Thomas Jefferson', doc.mentions[0].string)
         self.assertEqual((3, 5), doc.mentions[0].token_offsets)
         self.assertEqual('Thomas Jefferson',

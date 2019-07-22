@@ -14,7 +14,7 @@ class ResolverScorerTest(unittest.TestCase):
             (18, 19): Link(EntityType.PER, LinkType.LINK, ['444'], None),
         }}
         doc = unittest.mock.Mock()
-        doc.docid = 'doc1'
+        doc.doc_id = 'doc1'
         doc.mention_chains = [
             MentionChain([
                 Mention('', 'doc1', (0, 2), (), EntityType.PER),
@@ -45,7 +45,7 @@ class ResolverScorerTest(unittest.TestCase):
 class CascadeResolverTest(unittest.TestCase):
     def test(self):
         doc = unittest.mock.Mock()
-        doc.docid = 'doc1'
+        doc.doc_id = 'doc1'
         doc.mention_chains = [
             MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
         ]
@@ -63,7 +63,7 @@ class CascadeResolverTest(unittest.TestCase):
 class ExactNameResolverTest(unittest.TestCase):
     def test_no_matches(self):
         doc = unittest.mock.Mock()
-        doc.docid = 'doc1'
+        doc.doc_id = 'doc1'
         doc.mention_chains = [
             MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
         ]
@@ -75,7 +75,7 @@ class ExactNameResolverTest(unittest.TestCase):
 
     def test_one_match(self):
         doc = unittest.mock.Mock()
-        doc.docid = 'doc1'
+        doc.doc_id = 'doc1'
         doc.mention_chains = [
             MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
         ]
@@ -89,7 +89,7 @@ class ExactNameResolverTest(unittest.TestCase):
 
     def test_multiple_matches(self):
         doc = unittest.mock.Mock()
-        doc.docid = 'doc1'
+        doc.doc_id = 'doc1'
         doc.mention_chains = [
             MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
         ]
@@ -107,7 +107,7 @@ class ExactNameResolverTest(unittest.TestCase):
 class WikipediaResolverTest(unittest.TestCase):
     def test_no_match(self):
         doc = unittest.mock.Mock()
-        doc.docid = 'doc1'
+        doc.doc_id = 'doc1'
         doc.mention_chains = [
             MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
         ]
@@ -119,7 +119,7 @@ class WikipediaResolverTest(unittest.TestCase):
 
     def test_one_match(self):
         doc = unittest.mock.Mock()
-        doc.docid = 'doc1'
+        doc.doc_id = 'doc1'
         doc.mention_chains = [
             MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
         ]
@@ -132,7 +132,7 @@ class WikipediaResolverTest(unittest.TestCase):
 
     def test_multiple_matches(self):
         doc = unittest.mock.Mock()
-        doc.docid = 'doc1'
+        doc.doc_id = 'doc1'
         doc.mention_chains = [
             MentionChain([Mention('John Smith', 'doc1', (4, 8), (), EntityType.PER)]),
         ]

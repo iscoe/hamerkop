@@ -79,7 +79,7 @@ class CorefScorer:
             predicted_clusters.append([self._create_mention_id(m.offsets) for m in chain.mentions])
         predicted_mention_map = self._create_mention_map(predicted_clusters)
 
-        self._update_metrics(document.docid, predicted_clusters, predicted_mention_map)
+        self._update_metrics(document.doc_id, predicted_clusters, predicted_mention_map)
 
     def _update_metrics(self, doc_id, predicted_clusters, predicted_mention_map):
         p_num, p_den = self.metric(predicted_clusters, self.gt_mention_map[doc_id])

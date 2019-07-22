@@ -180,7 +180,7 @@ class TypeValidator(Preprocessor):
             original_size = len(document.mentions)
             document.mentions = [mention for mention in document.mentions if mention.type in EntityType.TYPES]
             if len(document.mentions) != original_size:
-                logger.error("Document {} has an invalid type".format(document.docid))
+                logger.error("Document {} has an invalid type".format(document.doc_id))
 
 
 class TextNormalizer(Preprocessor):

@@ -64,7 +64,7 @@ class CorefScorerTest(unittest.TestCase):
             },
         }
         doc = unittest.mock.Mock()
-        doc.docid = 'doc1'
+        doc.doc_id = 'doc1'
         doc.mention_chains = [
             MentionChain([
                 Mention('1', 'doc1', (0, 1), (), EntityType.PER, 'NIL10'),
@@ -101,7 +101,7 @@ class CorefScorerTest(unittest.TestCase):
             },
         }
         doc = unittest.mock.Mock()
-        doc.docid = 'doc1'
+        doc.doc_id = 'doc1'
         doc.mention_chains = [
             MentionChain([
                 Mention('1', 'doc1', (0, 1), (), EntityType.PER, 'NIL10'),

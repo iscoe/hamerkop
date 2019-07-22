@@ -13,7 +13,7 @@ class CandidatesScorerTest(unittest.TestCase):
             (16, 17): Link(EntityType.PER, LinkType.LINK, ['333'], None),
         }}
         doc = unittest.mock.Mock()
-        doc.docid = 'doc1'
+        doc.doc_id = 'doc1'
         doc.mention_chains = [
             MentionChain([
                 Mention('', 'doc1', (0, 2), (), EntityType.PER),
