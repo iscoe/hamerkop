@@ -1,4 +1,5 @@
 import unittest
+import unittest.mock
 import os
 from hamerkop.kb import *
 from hamerkop.core import EntityType
@@ -64,3 +65,19 @@ class NgramMemoryNameIndexTest(unittest.TestCase):
     def test_build_index(self):
         index = NgramMemoryNameIndex(self.kb, 4)
         self.assertTrue(('1', 0), index.index[EntityType.GPE]['_new'])
+
+
+class TypeIgnoringIndexTest(unittest.TestCase):
+    def test(self):
+        index1 = unittest.mock.Mock()
+        index1.find = unittest.mock.Mock()
+        index2 = TypeIgnoringIndex(index1, {EntityType.GPE, EntityType.LOC})
+        with unittest.mock.patch.object(index1, 'find') as mock:
+            index2.find('test', EntityType.GPE, 1)
+            self.assertEqual(mock.call_count, 2)
+            mock.assert_any_call('test', EntityType.GPE, 1)
+            mock.assert_any_call('test', EntityType.LOC, 1)
+
+            mock.reset_mock()
+            index2.find('test', EntityType.PER, 1)
+            mock.assert_called_once_with('test', EntityType.PER, 1)

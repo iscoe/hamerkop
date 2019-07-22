@@ -68,7 +68,11 @@ class CandidatesScorer:
                     if mention.offsets in doc_gt:
                         link = doc_gt[mention.offsets]
                         if link.link_type == LinkType.LINK:
-                            self.report.update(mention.string, link.entity_type, set(link.links).intersection(set(candidates)))
+                            self.report.update(
+                                mention.string,
+                                link.entity_type,
+                                set(link.links).intersection(set(candidates))
+                            )
 
 
 class CandidateGenerator(abc.ABC):
@@ -157,7 +161,8 @@ class CachingGenerator(CandidateGenerator):
         self.cache[key] = candidates
         return candidates
 
-    def _gen_key(self, mention_chain):
+    @staticmethod
+    def _gen_key(mention_chain):
         return mention_chain.name.lower() + ':' + mention_chain.type
 
 

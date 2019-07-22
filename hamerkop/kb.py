@@ -273,3 +273,33 @@ class NgramMemoryNameIndex(NameIndex):
             data = pickle.load(cfp)
             self.num_unique_names = data.num_unique_names
             return data.index
+
+
+class TypeIgnoringIndex(NameIndex):
+    """
+    Ignores some type distinctions.
+
+    Will return up to n * limit entities where n is the number of types to conflate.
+    """
+    def __init__(self, index, *types):
+        """
+        :param index: NameIndex to wrap
+        :param types: sets of entity types that should be queried at the same time
+        """
+        self.index = index
+        self.type_map = {}
+        for type_set in types:
+            for t in type_set:
+                if t not in self.type_map:
+                    self.type_map[t] = set()
+                self.type_map[t].update(type_set)
+
+    def find(self, name, entity_type, limit=25):
+        if entity_type in self.type_map:
+            entities = {}
+            for et in self.type_map:
+                for entity in self.index.find(name, et, limit):
+                    entities[entity.id] = entity
+            return list(entities.values())
+        else:
+            return self.index.find(name, entity_type, limit)
