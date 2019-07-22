@@ -39,7 +39,7 @@ class MockGenerator(CandidateGenerator):
     def __init__(self, entities):
         self.entities = entities
 
-    def find(self, mention_chain):
+    def find(self, mention_chain, document):
         return self.entities
 
 
@@ -56,7 +56,7 @@ class CombiningGeneratorTest(unittest.TestCase):
         chain = MentionChain([
             Mention('Henry', 'doc34', (0, 1), (0, 1), EntityType.PER, 'Men1'),
         ])
-        candidates = gen.find(chain)
+        candidates = gen.find(chain, unittest.mock.Mock())
         self.assertEqual(2, len(candidates))
 
 
@@ -76,7 +76,7 @@ class CascadeGeneratorTest(unittest.TestCase):
         chain = MentionChain([
             Mention('Henry', 'doc34', (0, 1), (0, 1), EntityType.PER, 'Men1'),
         ])
-        candidates = gen.find(chain)
+        candidates = gen.find(chain, unittest.mock.Mock())
         self.assertEqual(3, len(candidates))
 
 
@@ -89,16 +89,17 @@ class CachingGeneratorTest(unittest.TestCase):
                 [Entity('78', EntityType.PER, 'George', EntityOrigin.WLL)]
             ])
         gen = CachingGenerator(mock)
+        doc = unittest.mock.Mock()
         chain1 = MentionChain([
             Mention('Henry', 'doc34', (0, 1), (0, 1), EntityType.PER, 'Men1'),
         ])
-        candidates = gen.find(chain1)
+        candidates = gen.find(chain1, doc)
         self.assertEqual('67', candidates[0].id)
-        candidates = gen.find(chain1)
+        candidates = gen.find(chain1, doc)
         self.assertEqual('67', candidates[0].id)
-        mock.find.assert_called_once_with(chain1)
+        mock.find.assert_called_once_with(chain1, doc)
         chain2 = MentionChain([
             Mention('Susan', 'doc35', (0, 1), (0, 1), EntityType.PER, 'Men1'),
         ])
-        candidates = gen.find(chain2)
+        candidates = gen.find(chain2, doc)
         self.assertEqual('78', candidates[0].id)
