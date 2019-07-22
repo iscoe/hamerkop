@@ -220,6 +220,16 @@ class MentionChain:
         else:
             return None
 
+    def get_all_strings(self):
+        strings = set()
+        for mention in self.mentions:
+            strings.add(mention.string)
+            if mention.translit_string:
+                strings.add(mention.translit_string)
+            if mention.translate_string:
+                strings.add(mention.translate_string)
+        return strings
+
     @property
     def type(self):
         return self.mentions[0].type

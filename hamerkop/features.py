@@ -3,6 +3,7 @@
 # Distributed under the terms of the Apache 2.0 License.
 
 import abc
+import editdistance
 import numpy as np
 
 from .utilities import CaseInsensitiveSet
@@ -28,7 +29,7 @@ class FeatureVector:
         return v
 
 
-class CorefFeatureExtractor(abc.ABC):
+class CorefFeature(abc.ABC):
     """
     Extract features on a pair of mention chains (clusters)
     """
@@ -36,7 +37,7 @@ class CorefFeatureExtractor(abc.ABC):
         pass
 
 
-class EntityFeatureExtractor(abc.ABC):
+class EntityFeature(abc.ABC):
     """
     Extract features for a mention chain and a candidate entity
     """
@@ -50,20 +51,47 @@ class EntityFeatureExtractor(abc.ABC):
         pass
 
 
-class ExactMatchExtractor(EntityFeatureExtractor):
+class ExactMatchFeature(EntityFeature):
     """
     Do the mention chain and entity share a name that is an exact match?
 
     Adds a boolean to the feature vector
     """
     def extract(self, chain, entity, document, vector):
-        chain_names = CaseInsensitiveSet()
-        for mention in chain.mentions:
-            chain_names.add(mention.string)
-            if mention.translit_string:
-                chain_names.add(mention.translit_string)
-            if mention.translate_string:
-                chain_names.add(mention.translate_string)
-
+        chain_names = CaseInsensitiveSet(chain.get_all_strings())
         entity_names = CaseInsensitiveSet(entity.names)
         vector.add(not chain_names.isdisjoint(entity_names))
+
+
+class SharedTokensFeature(EntityFeature):
+    """
+    Percentage of tokens that are exact matches
+    """
+    def extract(self, chain, entity, document, vector):
+        chain_names = CaseInsensitiveSet(chain.get_all_strings())
+        entity_names = CaseInsensitiveSet(entity.names)
+        percent = 0
+        for x in chain_names:
+            chain_name_tokens = set(x.split())
+            for y in entity_names:
+                entity_name_tokens = set(y.split())
+                p = len(chain_name_tokens.intersection(entity_name_tokens)) / len(chain_name_tokens)
+                if p > percent:
+                    percent = p
+        vector.add(percent)
+
+
+class LevenshteinFeature(EntityFeature):
+    """
+    Normalized Levenshtein edit distance
+    """
+    def extract(self, chain, entity, document, vector):
+        chain_names = CaseInsensitiveSet(chain.get_all_strings())
+        entity_names = CaseInsensitiveSet(entity.names)
+        distance = float("inf")
+        for x in chain_names:
+            for y in entity_names:
+                d = editdistance.eval(x, y) / max(len(x), len(y))
+                if d < distance:
+                    distance = d
+        vector.add(distance)

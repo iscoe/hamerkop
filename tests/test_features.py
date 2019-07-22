@@ -33,19 +33,39 @@ class FeatureVectorTest(unittest.TestCase):
         self.assertAlmostEqual(-1.2, x[3])
 
 
-class ExactMatchExtractorTest(unittest.TestCase):
+class ExactMatchFeatureTest(unittest.TestCase):
     def test_match(self):
         v = FeatureVector()
         entity = Entity('1', EntityType.GPE, 'New York', EntityOrigin.GEO)
         entity.names = {'New York', 'New York City', 'NYC'}
         chain = MentionChain([Mention('Nueva York', 'doc1', (), (), EntityType.GPE)])
         chain.mentions[0].translate_string = 'new york'
-        ExactMatchExtractor().extract(chain, entity, None, v)
+        ExactMatchFeature().extract(chain, entity, None, v)
         self.assertTrue(v.data[0])
 
     def test_no_match(self):
         v = FeatureVector()
         entity = Entity('1', EntityType.GPE, 'Nueva York', EntityOrigin.GEO)
         chain = MentionChain([Mention('New York', 'doc1', (), (), EntityType.GPE)])
-        ExactMatchExtractor().extract(chain, entity, None, v)
+        ExactMatchFeature().extract(chain, entity, None, v)
         self.assertFalse(v.data[0])
+
+
+class SharedTokensFeatureTest(unittest.TestCase):
+    def test(self):
+        v = FeatureVector()
+        entity = Entity('1', EntityType.GPE, 'New York City', EntityOrigin.GEO)
+        entity.names = {'NYC', 'New York'}
+        chain = MentionChain([Mention('Nueva York', 'doc1', (), (), EntityType.GPE)])
+        SharedTokensFeature().extract(chain, entity, None, v)
+        self.assertAlmostEqual(0.5, v.data[0])
+
+
+class LevenshteinFeatureTest(unittest.TestCase):
+    def test(self):
+        v = FeatureVector()
+        entity = Entity('1', EntityType.GPE, 'New York City', EntityOrigin.GEO)
+        entity.names = {'NYC', 'New York'}
+        chain = MentionChain([Mention('Nueva York', 'doc1', (), (), EntityType.GPE)])
+        LevenshteinFeature().extract(chain, entity, None, v)
+        self.assertAlmostEqual(3/10, v.data[0])
