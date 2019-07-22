@@ -10,7 +10,7 @@ import logging
 import re
 import zipfile
 
-from .core import Document, Entity, EntityType, Link, LinkType, Mention, GeoContext, OrgContext, PerContext
+from .core import Document, DocType, Entity, EntityType, Link, LinkType, Mention, GeoContext, OrgContext, PerContext
 from .lang import NgramLangDetector
 from .string import String
 from .utilities import InProcessIncremental
@@ -113,6 +113,7 @@ class DocumentPreparer(object):
         :return: Document or None if no mentions
         """
         tokens = []
+        sentences = collections.defaultdict(list)
         token_index = token_start = 0
         mentions = []
         mention_rows = []
@@ -131,6 +132,7 @@ class DocumentPreparer(object):
                 mention_rows.append(row)
 
             tokens.append(row.token)
+            sentences[row.sent_id].append(row.token)
             token_index += 1
 
         if in_mention:
@@ -138,8 +140,10 @@ class DocumentPreparer(object):
 
         if mentions:
             filename = mentions[0].doc_id
+            doc_type = DocType.detect(filename)
             lang = self.lang_detector.detect(filename, tokens)
-            return Document(mentions, tokens, lang)
+            sents = [sentences[index] for index in sorted(sentences.keys())]
+            return Document(mentions, doc_type, lang, tokens, sents)
 
     def _extract(self, rows, token_start):
         first_row = rows.pop(0)
@@ -180,6 +184,7 @@ class DocumentPreparerUsingGroundTruth(object):
         :return: Document or None if no mentions
         """
         tokens = []
+        sentences = collections.defaultdict(list)
         token_index = token_start = 0
         mentions = []
         mention_rows = []
@@ -212,12 +217,15 @@ class DocumentPreparerUsingGroundTruth(object):
                     mention_rows = []
 
             tokens.append(row.token)
+            sentences[row.sent_id].append(row.token)
             token_index += 1
 
         if mentions:
             filename = mentions[0].doc_id
+            doc_type = DocType.detect(filename)
             lang = self.lang_detector.detect(filename, tokens)
-            return Document(mentions, tokens, lang)
+            sents = [sentences[index] for index in sorted(sentences.keys())]
+            return Document(mentions, doc_type, lang, tokens, sents)
 
     def _extract(self, rows, token_start, type):
         first_row = rows.pop(0)

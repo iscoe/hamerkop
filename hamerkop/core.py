@@ -249,23 +249,20 @@ class Document:
     """
     Document with its tokens and entity mentions
     :list mentions: List of entity mentions
-    :list tokens: List of tokens
     :string doc_id: Doc ID of the original document
+    :string lang: Lang
     :string type: DocType
+    :list tokens: List of tokens
     :list mention_chains: List of MentionChain objects
     """
-
-    def __init__(self, mentions, tokens, lang):
+    def __init__(self, mentions, doc_type, lang, tokens, sentences):
         self.mentions = mentions
         self.tokens = tokens
+        self.sentences = sentences
         self.lang = lang
         self.doc_id = self.mentions[0].doc_id
-        self.type = Document.detect_type(self.doc_id)
+        self.type = doc_type
         self.mention_chains = None
 
-    @staticmethod
-    def detect_type(doc_id):
-        return DocType.detect(doc_id)
-
     def __repr__(self):
-        return "Document({}) with {} mentions".format(self.doc_id, len(self.mentions))
+        return "Document({}) of type {} with {} mentions".format(self.doc_id, self.type, len(self.mentions))

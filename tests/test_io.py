@@ -115,7 +115,7 @@ class OutputWriterTest(unittest.TestCase):
         ]
         chains[0].entity = Entity('67', EntityType.PER, 'Henry', EntityOrigin.WLL)
         chains[1].entity = None
-        doc = Document(chains[0].mentions + chains[1].mentions, [], Lang.ENG)
+        doc = Document(chains[0].mentions + chains[1].mentions, DocType.WL, Lang.ENG, [], [])
         doc.mention_chains = chains
 
         buffer = io.StringIO()
