@@ -22,7 +22,7 @@ class ReadCoNLLTest(unittest.TestCase):
             self.assertEqual(6, len(data[1]))
             self.assertEqual('George', data[0][0].token)
             self.assertEqual('B-LOC', data[0][8].tag)
-            self.assertEqual('IL5_DF_020521_20170505_H0040MWIB', data[0][1].docid)
+            self.assertEqual('IL5_DF_020521_20170505_H0040MWIB', data[0][1].doc_id)
             self.assertEqual((19, 21), data[0][5].offsets)
 
     def test_with_header(self):
@@ -36,10 +36,10 @@ class DocumentPreparerTest(unittest.TestCase):
     def test_with_consecutive_b_tags(self):
         preparer = DocumentPreparer(InProcessIncremental(), FixedLang(Lang.ENG))
         rows = [
-            Row('George', 'B-PER', '_NW_doc1', (0, 6)),
-            Row('Tony', 'B-PER', '_NW_doc1', (8, 12)),
-            Row('are', 'O', '_NW_doc1', (13, 15)),
-            Row('crazy', 'O', '_NW_doc1', (16, 18)),
+            Row('George', 'B-PER', '_NW_doc1', (0, 6), 0),
+            Row('Tony', 'B-PER', '_NW_doc1', (8, 12), 0),
+            Row('are', 'O', '_NW_doc1', (13, 15), 0),
+            Row('crazy', 'O', '_NW_doc1', (16, 18), 0),
         ]
         doc = preparer.process(rows)
         self.assertEqual(2, len(doc.mentions))
@@ -58,11 +58,11 @@ class DocumentPreparerTest(unittest.TestCase):
     def test_with_ending_i_tag(self):
         preparer = DocumentPreparer(InProcessIncremental(), FixedLang(Lang.ENG))
         rows = [
-            Row('Here', 'O', '_NW_doc1', (0, 4)),
-            Row('are', 'O', '_NW_doc1', (5, 8)),
-            Row('the', 'O', '_NW_doc1', (9, 12)),
-            Row('Thomas', 'B-PER', '_NW_doc1', (13, 18)),
-            Row('Jefferson', 'I-PER', '_NW_doc1', (19, 28)),
+            Row('Here', 'O', '_NW_doc1', (0, 4), 0),
+            Row('are', 'O', '_NW_doc1', (5, 8), 0),
+            Row('the', 'O', '_NW_doc1', (9, 12), 0),
+            Row('Thomas', 'B-PER', '_NW_doc1', (13, 18), 0),
+            Row('Jefferson', 'I-PER', '_NW_doc1', (19, 28), 0),
         ]
         doc = preparer.process(rows)
         self.assertEqual(1, len(doc.mentions))
@@ -76,11 +76,11 @@ class DocumentPreparerTest(unittest.TestCase):
     def test_with_no_tags(self):
         preparer = DocumentPreparer(InProcessIncremental(), FixedLang(Lang.ENG))
         rows = [
-            Row('Here', 'O', '_NW_doc1', (0, 4)),
-            Row('are', 'O', '_NW_doc1', (5, 8)),
-            Row('the', 'O', '_NW_doc1', (9, 12)),
-            Row('Thomas', 'O', '_NW_doc1', (13, 18)),
-            Row('Jefferson', 'O', '_NW_doc1', (19, 28)),
+            Row('Here', 'O', '_NW_doc1', (0, 4), 0),
+            Row('are', 'O', '_NW_doc1', (5, 8), 0),
+            Row('the', 'O', '_NW_doc1', (9, 12), 0),
+            Row('Thomas', 'O', '_NW_doc1', (13, 18), 0),
+            Row('Jefferson', 'O', '_NW_doc1', (19, 28), 0),
         ]
         doc = preparer.process(rows)
         self.assertIsNone(doc)

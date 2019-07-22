@@ -40,7 +40,7 @@ class InputReader:
         return document
 
 
-Row = collections.namedtuple('Row', 'token tag docid offsets')
+Row = collections.namedtuple('Row', 'token tag doc_id offsets sent_id')
 
 
 class CoNLLReaderException(Exception):
@@ -63,8 +63,9 @@ def read_conll(fp):
 
     token_index = 0
     tag_index = 1
-    docid_index = 3
+    doc_id_index = 3
     offsets_indexes = (4, 5)
+    sent_id_index = 6
 
     rows = []
     current_docid = None
@@ -77,16 +78,17 @@ def read_conll(fp):
             raise RuntimeError("Bad conll format data: {}".format(row))
 
         if current_docid is None:
-            current_docid = row[docid_index]
+            current_docid = row[doc_id_index]
 
-        if row[docid_index] != current_docid:
+        if row[doc_id_index] != current_docid:
             yield rows
             rows = []
-            current_docid = row[docid_index]
+            current_docid = row[doc_id_index]
 
         start = int(row[offsets_indexes[0]])
         stop = int(row[offsets_indexes[1]])
-        rows.append(Row(row[token_index], row[tag_index], row[docid_index], (start, stop)))
+        sent_id = int(row[sent_id_index].split('-')[1])
+        rows.append(Row(row[token_index], row[tag_index], row[doc_id_index], (start, stop), sent_id))
     yield rows
 
 
@@ -145,14 +147,14 @@ class DocumentPreparer(object):
         ch_start = first_row.offsets[0]
         ch_stop = first_row.offsets[1]
         token_stop = token_start + 1
-        docid = first_row.docid
+        doc_id = first_row.doc_id
         type = first_row.tag[2:]
         for row in rows:
             name = ' '.join((name, row.token))
             ch_stop = row.offsets[1]
             token_stop += 1
         token_offsets = (token_start, token_stop)
-        mention = Mention(name, docid, (ch_start, ch_stop), token_offsets, type)
+        mention = Mention(name, doc_id, (ch_start, ch_stop), token_offsets, type)
         self.id_assigner.assign(mention)
         return mention
 
@@ -182,7 +184,7 @@ class DocumentPreparerUsingGroundTruth(object):
         mentions = []
         mention_rows = []
         in_mention = False
-        doc_id = rows[0].docid
+        doc_id = rows[0].doc_id
         if doc_id not in self.ground_truth:
             return None
         gt = self.ground_truth[doc_id]
