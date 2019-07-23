@@ -51,6 +51,17 @@ class EntityFeature(abc.ABC):
         pass
 
 
+class EntityFeatureExtractor:
+    def __init__(self, *features):
+        self.features = features
+
+    def extract(self, chain, entity, document):
+        v = FeatureVector()
+        for feature in self.features:
+            feature.extract(chain, entity, document, v)
+        return v.get()
+
+
 class ExactMatchFeature(EntityFeature):
     """
     Do the mention chain and entity share a name that is an exact match?

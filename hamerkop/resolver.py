@@ -5,6 +5,7 @@
 import abc
 import collections
 import io
+import numpy as np
 import urllib.parse
 
 from .core import EntityType, LinkType
@@ -262,3 +263,24 @@ class WikipediaResolver(Resolver):
         string = string.replace(' ', '_')
         string = string.replace("’", "'")
         return "http://en.wikipedia.org/wiki/{}".format(urllib.parse.quote(string))
+
+
+class SvmResolver(Resolver):
+    """
+    Use a trained model to select the best match
+    """
+    def __init__(self, classifier, extractor):
+        self.classifier = classifier
+        self.extractor = extractor
+
+    def resolve(self, document):
+        extract = self.extractor.extract
+        classify = self.classifier.decision_function
+        for chain in document.mention_chains:
+            features = [extract(chain, entity, document) for entity in chain.candidates]
+            scores = classify(features)
+            if all([s < 0 for s in scores]):
+                # no matches
+                continue
+            best_match = np.where(scores == np.amax(scores))
+            chain.entity = chain.candidates[best_match[0][0]]

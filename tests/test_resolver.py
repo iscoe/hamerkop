@@ -2,6 +2,9 @@ import unittest
 import unittest.mock
 from hamerkop.resolver import *
 from hamerkop.core import Entity, EntityOrigin, EntityType, Link, LinkType, Mention, MentionChain
+from hamerkop.features import EntityFeature, EntityFeatureExtractor
+import sklearn.svm
+import numpy as np
 
 
 class ResolverScorerTest(unittest.TestCase):
@@ -145,3 +148,40 @@ class WikipediaResolverTest(unittest.TestCase):
         self.assertEqual(1, len(doc.mention_chains))
         self.assertEqual(2, len(doc.mention_chains[0].candidates))
         self.assertIsNone(doc.mention_chains[0].entity)
+
+
+class SimpleFeature(EntityFeature):
+    def __init__(self):
+        self.data = [1, 3, 8, 2]
+
+    def extract(self, chain, entity, document, vector):
+        vector.add(self.data.pop(0))
+
+
+class SvmResolverTest(unittest.TestCase):
+    def trainClassifier(self):
+        x = np.array([[i] for i in range(1, 5)] + [[i] for i in range(6, 10)])
+        y = np.array([0] * 4 + [1] * 4)
+        classifier = sklearn.svm.LinearSVC(random_state=0, tol=1e-5)
+        classifier.fit(x, y)
+        return classifier
+
+    def test(self):
+
+        classifier = self.trainClassifier()
+        extractor = EntityFeatureExtractor(SimpleFeature())
+        resolver = SvmResolver(classifier, extractor)
+
+        doc = unittest.mock.Mock()
+        doc.mention_chains = [
+            MentionChain([Mention('John Smith', 'doc1', (), (), EntityType.PER)]),
+        ]
+        doc.mention_chains[0].candidates = [
+            Entity('122', EntityType.PER, 'John Smith', EntityOrigin.WLL),
+            Entity('123', EntityType.PER, 'John Smith', EntityOrigin.WLL),
+            Entity('124', EntityType.PER, 'John P. Smith', EntityOrigin.WLL),
+            Entity('125', EntityType.PER, 'Jake Smith', EntityOrigin.WLL),
+        ]
+
+        resolver.resolve(doc)
+        self.assertEqual('124', doc.mention_chains[0].entity.id)

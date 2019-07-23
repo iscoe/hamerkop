@@ -1,3 +1,4 @@
 editdistance
 langdetect
 numpy
+sklearn
