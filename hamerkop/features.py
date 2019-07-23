@@ -92,6 +92,23 @@ class SharedTokensFeature(EntityFeature):
         vector.add(percent)
 
 
+class LastNameFeature(EntityFeature):
+    """
+    Does the mention chain and entity share a last name
+    """
+    def extract(self, chain, entity, document, vector):
+        chain_names = CaseInsensitiveSet(chain.get_all_strings())
+        entity_names = CaseInsensitiveSet(entity.names)
+        shared_last_name = False
+        for x in chain_names:
+            if ' ' in x:
+                for y in entity_names:
+                    if ' ' in y:
+                        if x.split()[-1] == y.split()[-1]:
+                            shared_last_name = True
+        vector.add(shared_last_name)
+
+
 class LevenshteinFeature(EntityFeature):
     """
     Normalized Levenshtein edit distance

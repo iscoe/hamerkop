@@ -61,6 +61,29 @@ class SharedTokensFeatureTest(unittest.TestCase):
         self.assertAlmostEqual(0.5, v.data[0])
 
 
+class LastNameFeatureTest(unittest.TestCase):
+    def test_positive(self):
+        v = FeatureVector()
+        entity = Entity('1', EntityType.PER, 'John Smith', EntityOrigin.WLL)
+        chain = MentionChain([Mention('Jep Smith', 'doc1', (), (), EntityType.PER)])
+        LastNameFeature().extract(chain, entity, None, v)
+        self.assertTrue(v.data[0])
+
+    def test_negative(self):
+        v = FeatureVector()
+        entity = Entity('1', EntityType.PER, 'John Smith', EntityOrigin.WLL)
+        chain = MentionChain([Mention('Jep Miller', 'doc1', (), (), EntityType.PER)])
+        LastNameFeature().extract(chain, entity, None, v)
+        self.assertFalse(v.data[0])
+
+    def test_not_multi_token_name(self):
+        v = FeatureVector()
+        entity = Entity('1', EntityType.PER, 'John Smith', EntityOrigin.WLL)
+        chain = MentionChain([Mention('Smith', 'doc1', (), (), EntityType.PER)])
+        LastNameFeature().extract(chain, entity, None, v)
+        self.assertFalse(v.data[0])
+
+
 class LevenshteinFeatureTest(unittest.TestCase):
     def test(self):
         v = FeatureVector()
