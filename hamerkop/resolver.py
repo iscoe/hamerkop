@@ -174,6 +174,35 @@ class CascadeResolver(Resolver):
         document.mention_chains.extend(resolved)
 
 
+class LanguageSpecificResolver(Resolver):
+    """
+    Entity resolver that only runs if doc is a particular language(s)
+    """
+    def __init__(self, resolver, *langs):
+        self.resolver = resolver
+        self.langs = langs
+
+    def resolve(self, document):
+        if document.lang in self.langs:
+            self.resolver.resolve(document)
+
+
+class TypeSpecificResolver(Resolver):
+    """
+    Entity resolver that only runs for entities of a particular type(s)
+    """
+    def __init__(self, resolver, *types):
+        self.resolver = resolver
+        self.types = types
+
+    def resolve(self, document):
+        other_chains = [x for x in document.mention_chains if x.type not in self.types]
+        chains = [x for x in document.mention_chains if x.type in self.types]
+        document.mention_chains = chains
+        self.resolver.resolve(document)
+        document.mention_chains += other_chains
+
+
 class FirstResolver(Resolver):
     """Select the first candidate"""
     def resolve(self, document):
