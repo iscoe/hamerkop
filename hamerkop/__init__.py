@@ -26,8 +26,12 @@ from .string import String, Stemmer, DictStemmer, \
 
 # general utilities
 from .utilities import CaseInsensitiveDict, CaseInsensitiveSet, Identifier, InProcessIncremental, Timer, NotATimer, \
-    TsvKeyValueCache
+    TsvKeyValueCache, DictionaryLoader, SetLoader
 
+# feature extraction
+from .features import FeatureVector, CorefFeature, EntityFeature, EntityFeatureExtractor, \
+    OriginFeature, NumberOfNamesFeature, NumberOfNamesFeature, WikipediaFeature, \
+    ExactMatchFeature, SharedTokensFeature, LastNameFeature, LevenshteinFeature, JaroWinklerFeature, BeiderMorseFeature
 
 # 1st stage: preprocessing mentions
 from .preprocessor import Preprocessor, PreprocessorReporter, CascadePreprocessor, PassThru, FixType, TypeValidator, \
@@ -43,6 +47,8 @@ from .candidates import CandidateGenerator, CombiningGenerator, CachingGenerator
     IndexBasedGenerator, TranslitIndexBasedGenerator
 
 # 4th stage: entity resolution
-from .resolver import Resolver, CascadeResolver, FirstResolver, ExactNameResolver, WikipediaResolver
+from .resolver import Resolver, FeatureRecorder, CascadeResolver, LanguageSpecificResolver, TypeSpecificResolver, \
+    FirstResolver, ExactNameResolver, WikipediaResolver, \
+    SvmResolver
 
 from .pipeline import Pipeline

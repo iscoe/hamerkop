@@ -4,6 +4,7 @@
 
 import abc
 import collections
+import csv
 import io
 import numpy as np
 import urllib.parse
@@ -149,6 +150,41 @@ class Resolver(abc.ABC):
         :param document: Document with mention chains and candidate sets
         """
         pass
+
+
+class FeatureRecorder(Resolver):
+    """
+    Stores features for entities that we have ground truth for
+    """
+    def __init__(self, fp, gt, extractor):
+        """
+        :param fp: File handle for TSV file
+        :param gt: Ground truth
+        """
+        self.writer = csv.writer(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
+        self.gt = gt
+        self.extract = extractor.extract
+
+    def resolve(self, document):
+        if document.doc_id in self.gt:
+            doc_gt = self.gt[document.doc_id]
+            for chain in document.mention_chains:
+                candidates = [x.id for x in chain.candidates]
+                for mention in chain.mentions:
+                    if mention.offsets in doc_gt:
+                        link = doc_gt[mention.offsets]
+                        if link.link_type == LinkType.LINK:
+                            for entity in candidates:
+                                label = int(entity.id in link.links)
+                                features = self.extract(chain, entity, document).tolist()
+                                features.insert(0, label)
+                                self.writer(features)
+                        else:
+                            # these are all wrong
+                            for entity in candidates:
+                                features = self.extract(chain, entity, document).tolist()
+                                features.insert(0, 0)
+                                self.writer(features)
 
 
 class CascadeResolver(Resolver):
