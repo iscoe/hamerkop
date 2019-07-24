@@ -61,7 +61,8 @@ def read_conll(fp):
         raise CoNLLReaderException("Reader does not handle file with header: {}".format(fp.name))
     fp.seek(0)
 
-    token_index = 0
+    # take token from conll-full file
+    token_index = 2
     tag_index = 1
     doc_id_index = 3
     offsets_indexes = (4, 5)
