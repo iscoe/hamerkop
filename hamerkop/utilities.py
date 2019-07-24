@@ -124,6 +124,33 @@ class NotATimer:
         pass
 
 
+class DictionaryLoader:
+    """Loads a dictionary from a tsv file"""
+    @staticmethod
+    def load(fp, lowercase_keys=True):
+        d = {}
+        reader = csv.reader(fp, delimiter='\t', quoting=csv.QUOTE_NONE)
+        for row in reader:
+            if lowercase_keys:
+                d[row[0].strip().lower()] = row[1].strip()
+            else:
+                d[row[0].strip()] = row[1].strip()
+        return d
+
+
+class SetLoader:
+    """Loads a set from a file"""
+    @staticmethod
+    def load(fp, lowercase=True):
+        s = set()
+        for line in fp.readlines():
+            if lowercase:
+                s.add(line.strip().lower())
+            else:
+                s.add(line.strip())
+        return s
+
+
 class TsvKeyValueCache:
     """
     File-backed dictionary cache for write once setting.
