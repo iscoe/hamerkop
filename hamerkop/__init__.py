@@ -44,11 +44,11 @@ from .coref import Coref, CascadeCoref, CorefStage, LanguageSpecificStage, TypeS
 
 # 3rd stage: candidate generation
 from .candidates import CandidateGenerator, CombiningGenerator, CachingGenerator, CascadeGenerator, \
-    IndexBasedGenerator, TranslitIndexBasedGenerator
+    IndexBasedGenerator, TranslitIndexBasedGenerator, TranslatedIndexBasedGenerator
 
 # 4th stage: entity resolution
 from .resolver import Resolver, FeatureRecorder, CascadeResolver, LanguageSpecificResolver, TypeSpecificResolver, \
-    FirstResolver, ExactNameResolver, WikipediaResolver, \
+    FirstResolver, ExactNameResolver, WikipediaResolver, PhoneticResolver, EditDistanceResolver, \
     SvmResolver
 
 from .pipeline import Pipeline

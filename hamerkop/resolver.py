@@ -6,8 +6,11 @@ import abc
 import collections
 import csv
 import io
-import numpy as np
 import urllib.parse
+
+import abydos.phonetic
+import editdistance
+import numpy as np
 
 from .core import EntityType, LinkType
 from .utilities import CaseInsensitiveSet
@@ -299,6 +302,45 @@ class WikipediaResolver(Resolver):
         string = string.replace(' ', '_')
         string = string.replace("’", "'")
         return "http://en.wikipedia.org/wiki/{}".format(urllib.parse.quote(string))
+
+
+class PhoneticResolver(Resolver):
+    def __init__(self):
+        self.algo = abydos.phonetic.BeiderMorse('english', 'gen')
+
+    def resolve(self, document):
+        for chain in document.mention_chains:
+            for entity in chain.candidates:
+                chain_codes = self._encode(chain.get_all_strings())
+                entity_codes = self._encode(entity.names)
+                if not chain_codes.isdisjoint(entity_codes):
+                    chain.entity = entity
+                    break
+
+    def _encode(self, names):
+        codes = set()
+        for name in set(names):
+            codes.update(self.algo.encode(name).split())
+        return codes
+
+
+class EditDistanceResolver(Resolver):
+
+    def resolve(self, document):
+        for chain in document.mention_chains:
+            distance = float("inf")
+            best_match = None
+            for entity in chain.candidates:
+                chain_names = CaseInsensitiveSet(chain.get_all_strings())
+                entity_names = CaseInsensitiveSet(entity.names)
+                for x in chain_names:
+                    for y in entity_names:
+                        d = editdistance.eval(x, y) / max(len(x), len(y))
+                        if d < distance:
+                            distance = d
+                            best_match = entity
+            if distance < 0.1:
+                chain.entity = best_match
 
 
 class SvmResolver(Resolver):

@@ -235,8 +235,6 @@ class BeiderMorseFeature(EntityFeature):
     def extract(self, chain, entity, document, vector):
         chain_codes = self._encode(chain.get_all_strings())
         entity_codes = self._encode(entity.names)
-        print(chain_codes)
-        print(entity_codes)
         # we return the edit distance on the phonetic codes
         distance = float("inf")
         shortest_length = sys.maxsize
