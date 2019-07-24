@@ -103,10 +103,9 @@ class GeoContext(EntityContext):
     def __init__(self, type, country, latitude, longitude, population):
         """
         :string type: type of location (city, lake, road, etc.)
-        :string country: name of country
+        :string country: ISO-3166 2-letter country code for GPE and LOC
         :float latitude: Latitude of entity for most GPE and LOC
         :float longitude: Longitude of entity for most GPE and LOC
-        :string country: ISO-3166 2-letter country code for GPE and LOC
         :int population: Population count for some GPE and LOC
         """
         self.type = type

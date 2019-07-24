@@ -33,6 +33,37 @@ class FeatureVectorTest(unittest.TestCase):
         self.assertAlmostEqual(-1.2, x[3])
 
 
+class OriginFeatureTest(unittest.TestCase):
+    def test1(self):
+        v = FeatureVector()
+        entity = Entity('1', EntityType.PER, 'Christopher', EntityOrigin.WLL)
+        OriginFeature().extract(None, entity, None, v)
+        self.assertEqual(0, v.data[0])
+
+    def test2(self):
+        v = FeatureVector()
+        entity = Entity('1', EntityType.PER, 'Christopher', EntityOrigin.AUG)
+        OriginFeature().extract(None, entity, None, v)
+        self.assertEqual(1, v.data[0])
+
+
+class WikipediaFeatureTest(unittest.TestCase):
+    def test_positive(self):
+        v = FeatureVector()
+        entity = Entity('1', EntityType.GPE, 'New York', EntityOrigin.GEO, urls=['http://en.wikipedia.org/wiki/New_York_City'])
+        entity.names = {'New York', 'New York City', 'NYC'}
+        chain = MentionChain([Mention('New York City', 'doc1', (), (), EntityType.GPE)])
+        WikipediaFeature().extract(chain, entity, None, v)
+        self.assertTrue(v.data[0])
+
+    def test_negative(self):
+        v = FeatureVector()
+        entity = Entity('1', EntityType.GPE, 'New York', EntityOrigin.GEO, urls=['http://en.wikipedia.org/wiki/New_York'])
+        chain = MentionChain([Mention('New York City', 'doc1', (), (), EntityType.GPE)])
+        WikipediaFeature().extract(chain, entity, None, v)
+        self.assertFalse(v.data[0])
+
+
 class ExactMatchFeatureTest(unittest.TestCase):
     def test_match(self):
         v = FeatureVector()
