@@ -3,6 +3,10 @@
 # Distributed under the terms of the Apache 2.0 License.
 
 import abc
+import sys
+
+import abydos.distance
+import abydos.phonetic
 import editdistance
 import numpy as np
 
@@ -123,3 +127,53 @@ class LevenshteinFeature(EntityFeature):
                 if d < distance:
                     distance = d
         vector.add(distance)
+
+
+class JaroWinklerFeature(EntityFeature):
+    """
+    Jaro-Winkler string distance
+    """
+    def __init__(self):
+        self.algo = abydos.distance.JaroWinkler()
+
+    def extract(self, chain, entity, document, vector):
+        chain_names = CaseInsensitiveSet(chain.get_all_strings())
+        entity_names = CaseInsensitiveSet(entity.names)
+        distance = 0
+        for x in chain_names:
+            for y in entity_names:
+                d = self.algo.sim(x, y)
+                if d > distance:
+                    distance = d
+        vector.add(distance)
+
+
+class BeiderMorseFeature(EntityFeature):
+    """
+    Beider-Morse Phonetic Matching
+    """
+    def __init__(self):
+        self.algo = abydos.phonetic.BeiderMorse('english', 'gen')
+
+    def extract(self, chain, entity, document, vector):
+        chain_codes = self._encode(chain.get_all_strings())
+        entity_codes = self._encode(entity.names)
+        print(chain_codes)
+        print(entity_codes)
+        # we return the edit distance on the phonetic codes
+        distance = float("inf")
+        shortest_length = sys.maxsize
+        for x in chain_codes:
+            if len(x) < shortest_length:
+                shortest_length = len(x)
+            for y in entity_codes:
+                d = editdistance.eval(x, y)
+                if d < distance:
+                    distance = d
+        vector.add(distance / shortest_length)
+
+    def _encode(self, names):
+        codes = set()
+        for name in set(names):
+            codes.update(self.algo.encode(name).split())
+        return codes
