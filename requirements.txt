@@ -1,4 +1,3 @@
-abydos
 editdistance
 langdetect
 numpy

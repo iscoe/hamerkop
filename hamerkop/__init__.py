@@ -31,7 +31,7 @@ from .utilities import CaseInsensitiveDict, CaseInsensitiveSet, Identifier, InPr
 # feature extraction
 from .features import FeatureVector, CorefFeature, EntityFeature, EntityFeatureExtractor, \
     OriginFeature, NumberOfNamesFeature, NumberOfNamesFeature, WikipediaFeature, \
-    ExactMatchFeature, SharedTokensFeature, LastNameFeature, LevenshteinFeature, JaroWinklerFeature, BeiderMorseFeature
+    ExactMatchFeature, SharedTokensFeature, LastNameFeature, LevenshteinFeature
 
 # 1st stage: preprocessing mentions
 from .preprocessor import Preprocessor, PreprocessorReporter, CascadePreprocessor, PassThru, FixType, TypeValidator, \
@@ -48,7 +48,7 @@ from .candidates import CandidateGenerator, CombiningGenerator, CachingGenerator
 
 # 4th stage: entity resolution
 from .resolver import Resolver, FeatureRecorder, CascadeResolver, LanguageSpecificResolver, TypeSpecificResolver, \
-    FirstResolver, ExactNameResolver, WikipediaResolver, PhoneticResolver, EditDistanceResolver, \
+    FirstResolver, ExactNameResolver, WikipediaResolver, EditDistanceResolver, \
     SvmResolver
 
 from .pipeline import Pipeline

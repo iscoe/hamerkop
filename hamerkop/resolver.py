@@ -8,7 +8,6 @@ import csv
 import io
 import urllib.parse
 
-import abydos.phonetic
 import editdistance
 import numpy as np
 
@@ -302,26 +301,6 @@ class WikipediaResolver(Resolver):
         string = string.replace(' ', '_')
         string = string.replace("’", "'")
         return "http://en.wikipedia.org/wiki/{}".format(urllib.parse.quote(string))
-
-
-class PhoneticResolver(Resolver):
-    def __init__(self):
-        self.algo = abydos.phonetic.BeiderMorse('english', 'gen')
-
-    def resolve(self, document):
-        for chain in document.mention_chains:
-            for entity in chain.candidates:
-                chain_codes = self._encode(chain.get_all_strings())
-                entity_codes = self._encode(entity.names)
-                if not chain_codes.isdisjoint(entity_codes):
-                    chain.entity = entity
-                    break
-
-    def _encode(self, names):
-        codes = set()
-        for name in set(names):
-            codes.update(self.algo.encode(name).split())
-        return codes
 
 
 class EditDistanceResolver(Resolver):

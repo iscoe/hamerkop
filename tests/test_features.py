@@ -123,28 +123,3 @@ class LevenshteinFeatureTest(unittest.TestCase):
         chain = MentionChain([Mention('Nueva York', 'doc1', (), (), EntityType.GPE)])
         LevenshteinFeature().extract(chain, entity, None, v)
         self.assertAlmostEqual(3/10, v.data[0])
-
-
-class JaroWinklerFeatureTest(unittest.TestCase):
-    def test(self):
-        v = FeatureVector()
-        entity = Entity('1', EntityType.PER, 'Niall', EntityOrigin.WLL)
-        chain = MentionChain([Mention('Neil', 'doc1', (), (), EntityType.PER)])
-        JaroWinklerFeature().extract(chain, entity, None, v)
-        self.assertAlmostEqual(0.805, v.data[0])
-
-
-class BeiderMorseFeatureTest(unittest.TestCase):
-    def test_exact_match(self):
-        v = FeatureVector()
-        entity = Entity('1', EntityType.PER, 'Christopher', EntityOrigin.WLL)
-        chain = MentionChain([Mention('Christofer', 'doc1', (), (), EntityType.PER)])
-        BeiderMorseFeature().extract(chain, entity, None, v)
-        self.assertEqual(0, v.data[0])
-
-    def test_close_match(self):
-        v = FeatureVector()
-        entity = Entity('1', EntityType.PER, 'Caitlyn', EntityOrigin.WLL)
-        chain = MentionChain([Mention('Cait', 'doc1', (), (), EntityType.PER)])
-        BeiderMorseFeature().extract(chain, entity, None, v)
-        self.assertAlmostEqual(2/3, v.data[0])
