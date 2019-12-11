@@ -2,7 +2,7 @@
 # All rights reserved.
 # Distributed under the terms of the Apache 2.0 License.
 
-__version__ = '0.1.dev'
+__version__ = '1.0.0'
 
 # core classes and data structures
 from .core import Document, DocType, Entity, EntityContext, EntityOrigin, EntityType, Mention, MentionChain
